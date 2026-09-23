@@ -12,14 +12,25 @@ import sys
 import yaml
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CFO_CHECK_ROOT = "/Users/michael/Documents/GoogleAntigravity/cfo-check"
+def find_cfo_check_root(custom_dir=None):
+    if custom_dir:
+        return os.path.abspath(custom_dir) if os.path.exists(custom_dir) else None
+    env_dir = os.environ.get("CFO_CHECK_PATH")
+    if env_dir and os.path.exists(env_dir):
+        return os.path.abspath(env_dir)
+    sibling = os.path.abspath(os.path.join(PROJECT_ROOT, "..", "cfo-check"))
+    if os.path.exists(sibling):
+        return sibling
+    internal = os.path.join(PROJECT_ROOT, "cfo-check")
+    if os.path.exists(internal):
+        return internal
+    return None
 
 def find_latest_report():
     reports_dir = os.path.join(PROJECT_ROOT, "reports")
     files = [f for f in os.listdir(reports_dir) if f.startswith("celebrity_clone_") and f.endswith(".md")]
     if not files:
         return None
-    # Sort by modification time
     files.sort(key=lambda f: os.path.getmtime(os.path.join(reports_dir, f)), reverse=True)
     return os.path.join(reports_dir, files[0])
 
@@ -43,12 +54,18 @@ def main():
     parser = argparse.ArgumentParser(description="Bridge 13F Top Candidates to CFO-Check Valuation Pipeline")
     parser.add_argument("--tickers", type=str, default="", help="Comma-separated tickers (e.g. PDD,TSLA,CRDO). Auto-detects if empty.")
     parser.add_argument("--mode", type=str, choices=["screen", "full"], default="screen", help="cfo-check mode: screen (fast pre-screen) or full (5-report deep dive)")
+    parser.add_argument("--cfo-check-dir", type=str, default="", help="Path to cfo-check repository (default: ../cfo-check or $CFO_CHECK_PATH)")
     parser.add_argument("--archive-obsidian", action="store_true", help="Sync full reports to Obsidian (full mode only)")
     parser.add_argument("--dry-run", action="store_true", help="Generate watchlist YAML without running cfo-check")
     args = parser.parse_args()
 
-    if not os.path.exists(CFO_CHECK_ROOT):
-        print(f"❌ cfo-check project not found at: {CFO_CHECK_ROOT}")
+    cfo_check_root = find_cfo_check_root(args.cfo_check_dir)
+    if not cfo_check_root:
+        print("❌ cfo-check project not found!")
+        print("💡 cfo-check is the institutional forensic valuation engine for deep FCF analysis.")
+        print("   Please clone it into your workspace:")
+        print("   $ git clone https://github.com/MichaelSun/cfo-check.git")
+        print("   Or set environment variable: export CFO_CHECK_PATH=/path/to/cfo-check")
         sys.exit(1)
 
     # 1. Resolve Tickers
