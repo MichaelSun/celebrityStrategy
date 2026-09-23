@@ -47,7 +47,16 @@ python3 .agents/skills/celebrity-clone-13f-auditor/scripts/fetch_dataroma_holdin
 # 3. 指定特定投资人代码
 python3 .agents/skills/celebrity-clone-13f-auditor/scripts/fetch_dataroma_holdings.py --gurus HC,HH,BRK,SE
 
-# 4. 🔀 一键启动后道 FCF Check (cfo-check) 深度排雷流水线
+# 4. [Phase 2] 抓取 Dataroma 全市场信号（Grand Portfolio 共识热力图 + All Activity 实时流水 + 历史仓位回填）
+python3 scripts/fetch_global_signals.py --backfill HC,HH,BRK
+
+# 5. [Phase 2] 计算多季度决心积累积分榜（Building Conviction Streak & Resonance Multipliers）
+python3 scripts/conviction_scorer.py --quarters 6 --top 20
+
+# 6. [Phase 2] 刷新基本面估值快照（PE TTM, Forward PE, FCF Yield, 市值, 52W范围）
+python3 scripts/refresh_valuation_cache.py
+
+# 7. 🔀 一键启动后道 FCF Check (cfo-check) 深度排雷流水线
 # 自动抓取最新 13F 报告筛选出的 Top 候选标的（如 PDD, BRK.B, TSLA, CRDO）移送 cfo-check：
 python3 scripts/bridge_to_cfo_check.py --mode screen
 ```
