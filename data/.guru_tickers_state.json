@@ -1,0 +1,33 @@
+{
+  "HC": [
+    "AAPL",
+    "BRK.B",
+    "CROX",
+    "EWBC",
+    "GOOG",
+    "GOOGL",
+    "MCO",
+    "PDD",
+    "TME"
+  ],
+  "HH": [
+    "AAPL",
+    "BABA",
+    "BRK.B",
+    "CRCL",
+    "CRDO",
+    "DIS",
+    "GOOG",
+    "INOD",
+    "MSFT",
+    "NVDA",
+    "OXY",
+    "PDD",
+    "PLTR",
+    "SNOW",
+    "SNPS",
+    "TEM",
+    "TSLA",
+    "UNH"
+  ]
+}
