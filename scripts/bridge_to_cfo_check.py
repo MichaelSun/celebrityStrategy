@@ -36,18 +36,36 @@ def find_latest_report():
 
 def extract_candidates_from_report(report_path):
     candidates = []
-    if not report_path or not os.path.exists(report_path):
-        return ["PDD", "BRK.B", "TSLA", "CRDO"]
-    try:
-        with open(report_path, "r", encoding="utf-8") as f:
-            text = f.read()
-        m = re.search(r"本季度最高确信度与共振候选标的为：\*\*`([^`]+)`\*\*", text)
-        if m:
-            cands = [x.strip() for x in m.group(1).split(",") if x.strip()]
-            if cands:
-                return cands
-    except Exception:
-        pass
+    # Priority 1: Check latest generated Markdown report
+    if report_path and os.path.exists(report_path):
+        try:
+            with open(report_path, "r", encoding="utf-8") as f:
+                text = f.read()
+            m = re.search(r"本季度最高确信度与共振候选标的为：\*\*`([^`]+)`\*\*", text)
+            if m:
+                cands = [x.strip() for x in m.group(1).split(",") if x.strip()]
+                if cands:
+                    return cands
+        except Exception:
+            pass
+
+    # Priority 2: Query SQLite conviction_scores table (Phase 2)
+    db_path = os.path.join(PROJECT_ROOT, "data", "investor_radar.db")
+    if os.path.exists(db_path):
+        try:
+            conn = sqlite3.connect(db_path)
+            rows = conn.execute("""
+            SELECT ticker FROM conviction_scores 
+            WHERE latest_signal != 'SOLD' AND final_score > 0 
+            GROUP BY ticker 
+            ORDER BY MAX(final_score) DESC LIMIT 4
+            """).fetchall()
+            conn.close()
+            if rows:
+                return [r[0] for r in rows]
+        except Exception:
+            pass
+
     return ["PDD", "BRK.B", "TSLA", "CRDO"]
 
 def main():

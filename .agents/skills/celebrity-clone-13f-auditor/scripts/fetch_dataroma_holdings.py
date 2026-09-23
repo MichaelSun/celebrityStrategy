@@ -125,6 +125,41 @@ def find_project_root():
         current = parent
     return os.path.abspath(os.getcwd())
 
+def _import_phase2_modules():
+    """Dynamically import Phase 2 modules from scripts directory."""
+    proj_root = find_project_root()
+    sdir = os.path.join(proj_root, "scripts")
+    if sdir not in sys.path:
+        sys.path.insert(0, sdir)
+    mod = {}
+    try:
+        from conviction_scorer import compute_conviction_scores, format_conviction_section
+        mod["compute_conviction_scores"] = compute_conviction_scores
+        mod["format_conviction_section"] = format_conviction_section
+    except Exception:
+        pass
+    try:
+        from fetch_global_signals import (
+            fetch_all_activity, fetch_grand_portfolio,
+            format_grand_portfolio_section, format_tracked_activity_section,
+            run_global_signals, backfill_portfolio_weights
+        )
+        mod["fetch_all_activity"] = fetch_all_activity
+        mod["fetch_grand_portfolio"] = fetch_grand_portfolio
+        mod["format_grand_portfolio_section"] = format_grand_portfolio_section
+        mod["format_tracked_activity_section"] = format_tracked_activity_section
+        mod["run_global_signals"] = run_global_signals
+        mod["backfill_portfolio_weights"] = backfill_portfolio_weights
+    except Exception:
+        pass
+    try:
+        from refresh_valuation_cache import format_valuation_section, refresh_valuation_cache
+        mod["format_valuation_section"] = format_valuation_section
+        mod["refresh_valuation_cache"] = refresh_valuation_cache
+    except Exception:
+        pass
+    return mod
+
 def norm_name(n):
     n = n.upper().strip()
     for s in [
@@ -535,15 +570,17 @@ def record_to_sqlite(db_path, quarter, all_data):
         pass
 
 # ── Markdown Report Generator ───────────────────────────────────────────────
-def generate_markdown(all_data, sec_data, yf_prices, validation, active_guru_codes, db_path=""):
+def generate_markdown(all_data, sec_data, yf_prices, validation, active_guru_codes, db_path="", global_data=None, conviction_leaderboard=None):
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     lines = []
     L = lambda x: lines.append(x)
 
+    p2 = _import_phase2_modules()
+
     L("# 📊 价值投资机构季度 13F 变动审计与机会雷达")
     L("")
     L(f"**审计生成时间：** {now}  ")
-    L(f"**数据源支持：** Dataroma 机构持仓 + SEC EDGAR 13F-HR XML 官方备案 + yfinance 现价")
+    L(f"**数据源支持：** Dataroma 机构持仓 + 全市场 Grand Portfolio 共识 + SEC EDGAR 13F-HR XML + yfinance 现价/估值")
     L(f"**监控大师圈层：** {len(active_guru_codes)} 位顶级价值投资人")
     L("")
     L("---")
@@ -677,8 +714,12 @@ def generate_markdown(all_data, sec_data, yf_prices, validation, active_guru_cod
             c = next((cc for cc in active_guru_codes
                       if any(hh["ticker"] == x["ticker"] and hh["signal"] == "INCREASED"
                              for hh in all_data[cc]["holdings"])), "?")
-            L(f"- **{x['ticker']}**：{TRACKED_GURUS[c]['short']} 仓位放大至 **{x['mult']:.2f}×**（权重增加 {x['weight_chg']:+.2f}%，达到 {x['pct']:.2f}%）")
+            L(f"- **{x['ticker']}**：{TRACKED_GURUS[c]['short']} 仓位放大至 **{x['mult']:.2f}×**（权重增加 {x.get('weight_chg', 0):+.2f}%，达到 {x['pct']:.2f}%）")
         L("")
+
+    # 2.5 Multi-Quarter Building Conviction Leaderboard (Phase 2)
+    if conviction_leaderboard and "format_conviction_section" in p2:
+        L(p2["format_conviction_section"](conviction_leaderboard, top_n=12))
 
     L("---")
     L("")
@@ -721,6 +762,27 @@ def generate_markdown(all_data, sec_data, yf_prices, validation, active_guru_cod
         L(f"| **{t}** | {actor_str} | {rep_p_str} | {cur_p_str} | {cw} | {advice} |")
 
     L("")
+
+    # 3.5 Valuation Cache Fundamental Snapshot (Phase 2)
+    if "format_valuation_section" in p2 and os.path.exists(db_path):
+        val_sec = p2["format_valuation_section"](db_path, tickers=priority_tickers, top_n=15)
+        if val_sec:
+            L(val_sec)
+
+    # 3.6 Grand Portfolio & Global Activity (Phase 2)
+    if global_data:
+        gp, act = global_data
+        if gp and "format_grand_portfolio_section" in p2:
+            L("---")
+            L("")
+            L(p2["format_grand_portfolio_section"](gp, top_n=20))
+        if act and "format_tracked_activity_section" in p2:
+            act_sec = p2["format_tracked_activity_section"](act)
+            if act_sec:
+                L("---")
+                L("")
+                L(act_sec)
+
     L("---")
     L("")
 
@@ -791,7 +853,12 @@ def generate_markdown(all_data, sec_data, yf_prices, validation, active_guru_cod
     # 6. CFO-Check Pipeline Recommendation
     L("## 🔬 六、FCF Check (`cfo-check`) 深度排雷候选名单")
     L("")
-    top_candidates = priority_tickers[:4] if priority_tickers else ["PDD", "BRK.B"]
+    if conviction_leaderboard:
+        conv_cands = [s["ticker"] for s in conviction_leaderboard if s.get("latest_signal") != "SOLD" and s.get("final_score", 0) > 0]
+        cand_pool = list(dict.fromkeys(conv_cands + priority_tickers))
+        top_candidates = cand_pool[:4] if cand_pool else ["PDD", "BRK.B"]
+    else:
+        top_candidates = priority_tickers[:4] if priority_tickers else ["PDD", "BRK.B"]
     cand_str = ", ".join(top_candidates)
     L(f"前道聪明钱雷达已完成筛选，本季度最高确信度与共振候选标的为：**`{cand_str}`**。")
     L("")
@@ -805,7 +872,7 @@ def generate_markdown(all_data, sec_data, yf_prices, validation, active_guru_cod
 
 # ── Main Entrypoint ─────────────────────────────────────────────────────────
 def main():
-    parser = argparse.ArgumentParser(description="13F Institutional Value Radar (Phase 1)")
+    parser = argparse.ArgumentParser(description="13F Institutional Value Radar (Phase 1 & Phase 2 Integrated)")
     parser.add_argument("--tier", type=str, default="1", help="Guru Tiers to audit (e.g. '1' or '1,2'). Default: 1")
     parser.add_argument("--gurus", type=str, default="", help="Comma-separated guru codes to audit. Overrides --tier")
     parser.add_argument("--output-dir", type=str, default="", help="Directory to save generated markdown reports")
@@ -815,6 +882,12 @@ def main():
     parser.add_argument("--skip-sec", action="store_true", help="Skip SEC EDGAR 13F XML cross-validation")
     parser.add_argument("--skip-price", action="store_true", help="Skip yfinance current price check")
     parser.add_argument("--export-json", action="store_true", help="Also export raw audit data as JSON")
+    # Phase 2 extension flags
+    parser.add_argument("--global-signals", action="store_true", default=False, help="Fetch Dataroma Grand Portfolio & All Activity consensus")
+    parser.add_argument("--conviction-scores", action="store_true", default=True, help="Compute multi-quarter building conviction leaderboard (default: True)")
+    parser.add_argument("--no-conviction-scores", dest="conviction_scores", action="store_false", help="Skip multi-quarter conviction scoring")
+    parser.add_argument("--refresh-valuation", action="store_true", default=False, help="Refresh valuation cache via yfinance during run")
+    parser.add_argument("--backfill-weights", action="store_true", default=False, help="Backfill historical portfolio_weight via Dataroma p_hist")
     args = parser.parse_args()
 
     project_root = find_project_root()
@@ -911,10 +984,42 @@ def main():
     record_to_sqlite(db_path, quarter, all_data)
     print("  ✅ Time-series snapshots stored in SQLite")
 
+    p2 = _import_phase2_modules()
+
+    # Step 5b: Phase 2 - Backfill weights if requested
+    if args.backfill_weights and "backfill_portfolio_weights" in p2:
+        print(f"\n💾 Step 5b: Backfilling historical portfolio weights from Dataroma p_hist...")
+        bf_cnt = p2["backfill_portfolio_weights"](db_path, active_codes)
+        print(f"  ✅ Backfilled {bf_cnt} historical portfolio_weight rows")
+
+    # Step 5c: Phase 2 - Refresh valuation cache if requested
+    if args.refresh_valuation and "refresh_valuation_cache" in p2:
+        print(f"\n💾 Step 5c: Refreshing valuation cache via yfinance...")
+        val_cnt = p2["refresh_valuation_cache"](db_path, verbose=False)
+        print(f"  ✅ Refreshed valuation cache for {val_cnt} tickers")
+
+    # Step 5d: Phase 2 - Compute multi-quarter conviction scores
+    conviction_leaderboard = None
+    if args.conviction_scores and "compute_conviction_scores" in p2:
+        print(f"\n🧮 Step 5d: Computing multi-quarter building conviction leaderboard...")
+        conviction_leaderboard = p2["compute_conviction_scores"](db_path, rolling_quarters=6)
+        print(f"  ✅ Computed {len(conviction_leaderboard)} conviction entries from SQLite")
+
+    # Step 5e: Phase 2 - Global signals if requested
+    global_data = None
+    if args.global_signals and "fetch_grand_portfolio" in p2:
+        print(f"\n🌐 Step 5e: Fetching Dataroma Grand Portfolio & All Activity consensus...")
+        gp = p2["fetch_grand_portfolio"]()
+        act = p2["fetch_all_activity"]("a") if "fetch_all_activity" in p2 else []
+        global_data = (gp, act)
+        print(f"  ✅ Fetched {len(gp)} grand portfolio holdings and {len(act)} activity streams")
 
     # 6. Generate Markdown Report
-    print(f"\n📝 Step 6: Rendering Value Radar opportunity report...")
-    md, top_candidates = generate_markdown(all_data, sec_data, yf_prices, validation, active_codes, db_path)
+    print(f"\n📝 Step 6: Rendering Value Radar opportunity report (Phase 1 + Phase 2)...")
+    md, top_candidates = generate_markdown(
+        all_data, sec_data, yf_prices, validation, active_codes, db_path,
+        global_data=global_data, conviction_leaderboard=conviction_leaderboard
+    )
 
     yyyymmdd = datetime.datetime.now().strftime("%Y%m%d")
     mmddyyyy = datetime.datetime.now().strftime("%m-%d-%Y")
