@@ -47,6 +47,12 @@ def init_db():
     )
     """)
 
+    # Unique index to prevent duplicate rows when re-running this script
+    cur.execute("""
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_ph_uniq
+    ON portfolio_history(quarter, guru_code, ticker)
+    """)
+
     # 3. Ticker valuation cache table
     cur.execute("""
     CREATE TABLE IF NOT EXISTS valuation_cache (
@@ -98,7 +104,7 @@ def init_db():
                     except ValueError:
                         pass
                     cur.execute("""
-                    INSERT INTO portfolio_history (quarter, guru_code, ticker, company_name, activity, shares_change, portfolio_pct_change)
+                    INSERT OR IGNORE INTO portfolio_history (quarter, guru_code, ticker, company_name, activity, shares_change, portfolio_pct_change)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     """, (quarter, guru_code, it["ticker"], it["name"], it["activity"], it["shares_change"], pct_chg))
 

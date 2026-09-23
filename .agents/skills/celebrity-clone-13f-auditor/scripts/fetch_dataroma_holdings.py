@@ -526,7 +526,7 @@ def record_to_sqlite(db_path, quarter, all_data):
                 weight = h.get("pct", 0.0)
                 price = h.get("price", 0.0)
                 cur.execute("""
-                INSERT INTO portfolio_history (quarter, guru_code, ticker, company_name, activity, shares_change, portfolio_pct_change, shares_held, portfolio_weight, reported_price)
+                INSERT OR IGNORE INTO portfolio_history (quarter, guru_code, ticker, company_name, activity, shares_change, portfolio_pct_change, shares_held, portfolio_weight, reported_price)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (quarter, code, h["ticker"], h["company"], h["activity"], str(h.get("shares_change", 0)), pct_chg, shares_held, weight, price))
         conn.commit()
@@ -895,15 +895,22 @@ def main():
             validation[code] = validate_holdings(data["holdings"], sec_data.get(code), yf_prices)
 
     # 5. Record to SQLite Time-Series DB
-    quarter = "Q2 2026"
+    # Dynamically infer quarter: use actual data period or fall back to date-based inference
+    quarter = None
     for code in active_codes:
         d = all_data.get(code)
-        if d and d.get("period"):
+        if d and d.get("period") and d["period"] != "Unknown":
             quarter = d["period"]
             break
-    print(f"\n💾 Step 5: Ingesting into SQLite time-series database ({db_path})...")
+    if not quarter:
+        # Fallback: infer from current date minus ~45-day 13F reporting lag
+        report_ref = datetime.datetime.now() - datetime.timedelta(days=45)
+        q_num = (report_ref.month - 1) // 3 + 1
+        quarter = f"Q{q_num} {report_ref.year}"
+    print(f"\n💾 Step 5: Ingesting into SQLite time-series database ({db_path})... [Quarter: {quarter}]")
     record_to_sqlite(db_path, quarter, all_data)
     print("  ✅ Time-series snapshots stored in SQLite")
+
 
     # 6. Generate Markdown Report
     print(f"\n📝 Step 6: Rendering Value Radar opportunity report...")
@@ -911,8 +918,10 @@ def main():
 
     yyyymmdd = datetime.datetime.now().strftime("%Y%m%d")
     mmddyyyy = datetime.datetime.now().strftime("%m-%d-%Y")
+    # Sanitize quarter string for filenames: "Q2 2026" -> "Q2_2026"
+    quarter_tag = quarter.replace(" ", "_")
 
-    snap_prefix = f"celebrity_clone_{mmddyyyy}_Q2_V"
+    snap_prefix = f"celebrity_clone_{mmddyyyy}_{quarter_tag}_V"
     existing_snap = [f for f in os.listdir(out_dir) if f.startswith(snap_prefix) and f.endswith(".md")]
     max_sv = 0
     for f in existing_snap:

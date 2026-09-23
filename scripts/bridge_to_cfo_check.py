@@ -81,7 +81,7 @@ def main():
         sys.exit(1)
 
     # 2. Build cfo-check watchlist YAML
-    watchlist_dir = os.path.join(CFO_CHECK_ROOT, "batch-scanner", "watchlists")
+    watchlist_dir = os.path.join(cfo_check_root, "batch-scanner", "watchlists")
     os.makedirs(watchlist_dir, exist_ok=True)
     watchlist_path = os.path.join(watchlist_dir, "13f_top_candidates.yaml")
 
@@ -101,7 +101,7 @@ def main():
         return
 
     # 3. Invoke cfo-check batch_runner.py
-    runner_script = os.path.join(CFO_CHECK_ROOT, "batch-scanner", "scripts", "batch_runner.py")
+    runner_script = os.path.join(cfo_check_root, "batch-scanner", "scripts", "batch_runner.py")
     cmd = [
         sys.executable,
         runner_script,
@@ -113,10 +113,10 @@ def main():
 
     print(f"\n🚀 Invoking cfo-check forensic engine ({args.mode} mode)...")
     print(f"   Command: {' '.join(cmd)}")
-    print(f"   Working Directory: {CFO_CHECK_ROOT}\n")
+    print(f"   Working Directory: {cfo_check_root}\n")
 
     try:
-        res = subprocess.run(cmd, cwd=CFO_CHECK_ROOT)
+        res = subprocess.run(cmd, cwd=cfo_check_root)
         if res.returncode == 0:
             print("\n🎉 cfo-check forensic analysis completed successfully!")
         else:
