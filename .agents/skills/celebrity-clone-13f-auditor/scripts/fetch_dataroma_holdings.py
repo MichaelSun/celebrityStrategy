@@ -158,6 +158,12 @@ def _import_phase2_modules():
         mod["refresh_valuation_cache"] = refresh_valuation_cache
     except Exception:
         pass
+    try:
+        from scan_sec_13g import format_13g_section, run_13g_scanner
+        mod["format_13g_section"] = format_13g_section
+        mod["run_13g_scanner"] = run_13g_scanner
+    except Exception:
+        pass
     return mod
 
 def norm_name(n):
@@ -570,7 +576,7 @@ def record_to_sqlite(db_path, quarter, all_data):
         pass
 
 # ── Markdown Report Generator ───────────────────────────────────────────────
-def generate_markdown(all_data, sec_data, yf_prices, validation, active_guru_codes, db_path="", global_data=None, conviction_leaderboard=None):
+def generate_markdown(all_data, sec_data, yf_prices, validation, active_guru_codes, db_path="", global_data=None, conviction_leaderboard=None, sec_13g_signals=None):
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     lines = []
     L = lambda x: lines.append(x)
@@ -674,6 +680,14 @@ def generate_markdown(all_data, sec_data, yf_prices, validation, active_guru_cod
     L("")
     L("---")
     L("")
+
+    # 1.5 Early Warning Radar: SEC 13G/13D Beneficial Ownership (P1)
+    if sec_13g_signals and "format_13g_section" in p2:
+        sec_13g_md = p2["format_13g_section"](sec_13g_signals, top_n=10)
+        if sec_13g_md:
+            L(sec_13g_md)
+            L("---")
+            L("")
 
     # 2. Top Conviction Candidates & Resonance Radar
     L("## 🎯 二、聪明钱核心机会雷达（Conviction & Consensus Radar）")
@@ -882,12 +896,13 @@ def main():
     parser.add_argument("--skip-sec", action="store_true", help="Skip SEC EDGAR 13F XML cross-validation")
     parser.add_argument("--skip-price", action="store_true", help="Skip yfinance current price check")
     parser.add_argument("--export-json", action="store_true", help="Also export raw audit data as JSON")
-    # Phase 2 extension flags
+    # Phase 2 & P1 extension flags
     parser.add_argument("--global-signals", action="store_true", default=False, help="Fetch Dataroma Grand Portfolio & All Activity consensus")
     parser.add_argument("--conviction-scores", action="store_true", default=True, help="Compute multi-quarter building conviction leaderboard (default: True)")
     parser.add_argument("--no-conviction-scores", dest="conviction_scores", action="store_false", help="Skip multi-quarter conviction scoring")
     parser.add_argument("--refresh-valuation", action="store_true", default=False, help="Refresh valuation cache via yfinance during run")
     parser.add_argument("--backfill-weights", action="store_true", default=False, help="Backfill historical portfolio_weight via Dataroma p_hist")
+    parser.add_argument("--scan-13g", action="store_true", default=False, help="Run SEC 13G/13D beneficial ownership scanner (P1)")
     args = parser.parse_args()
 
     project_root = find_project_root()
@@ -1014,11 +1029,19 @@ def main():
         global_data = (gp, act)
         print(f"  ✅ Fetched {len(gp)} grand portfolio holdings and {len(act)} activity streams")
 
+    # Step 5f: P1 - Scan SEC 13G/13D early warnings if requested
+    sec_13g_signals = None
+    if args.scan_13g and "run_13g_scanner" in p2:
+        print(f"\n⚡ Step 5f: Scanning SEC 13G/13D early beneficial ownership filings...")
+        sec_13g_signals = p2["run_13g_scanner"](db_path, tickers=list(all_tickers)[:15], days_back=180)
+        print(f"  ✅ Detected {len(sec_13g_signals)} recent 13G/13D filings")
+
     # 6. Generate Markdown Report
-    print(f"\n📝 Step 6: Rendering Value Radar opportunity report (Phase 1 + Phase 2)...")
+    print(f"\n📝 Step 6: Rendering Value Radar opportunity report (Phase 1 + Phase 2 + P1)...")
     md, top_candidates = generate_markdown(
         all_data, sec_data, yf_prices, validation, active_codes, db_path,
-        global_data=global_data, conviction_leaderboard=conviction_leaderboard
+        global_data=global_data, conviction_leaderboard=conviction_leaderboard,
+        sec_13g_signals=sec_13g_signals
     )
 
     yyyymmdd = datetime.datetime.now().strftime("%Y%m%d")

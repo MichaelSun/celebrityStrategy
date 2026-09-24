@@ -56,7 +56,16 @@ python3 scripts/conviction_scorer.py --quarters 6 --top 20
 # 6. [Phase 2] 刷新基本面估值快照（PE TTM, Forward PE, FCF Yield, 市值, 52W范围）
 python3 scripts/refresh_valuation_cache.py
 
-# 7. 🔀 一键启动后道 FCF Check (cfo-check) 深度排雷流水线
+# 7. [P1] 扫描 SEC 13G/13D 提前举牌预警（突破 45 天 13F 滞后）
+python3 scripts/scan_sec_13g.py --days 180 --top 15
+
+# 8. [P1] 运行全量雷达（含 13F + 13G + 全局信号 + 积分榜）并同步 Obsidian
+python3 .agents/skills/celebrity-clone-13f-auditor/scripts/fetch_dataroma_holdings.py --tier 1 --scan-13g --global-signals --sync-obsidian
+
+# 9. [P1] 触发执行雷达全套扫描并生成消息推送（支持飞书/钉钉/Telegram/Discord/Slack）
+python3 scripts/send_notification.py --dry-run
+
+# 10. 🔀 一键启动后道 FCF Check (cfo-check) 深度排雷流水线
 # 自动抓取最新 13F 报告筛选出的 Top 候选标的（如 PDD, BRK.B, TSLA, CRDO）移送 cfo-check：
 python3 scripts/bridge_to_cfo_check.py --mode screen
 ```
