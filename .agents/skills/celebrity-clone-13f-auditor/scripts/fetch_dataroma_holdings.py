@@ -164,6 +164,12 @@ def _import_phase2_modules():
         mod["run_13g_scanner"] = run_13g_scanner
     except Exception:
         pass
+    try:
+        from generate_html_dashboard import generate_html, load_dashboard_data
+        mod["generate_html"] = generate_html
+        mod["load_dashboard_data"] = load_dashboard_data
+    except Exception:
+        pass
     return mod
 
 def norm_name(n):
@@ -903,6 +909,8 @@ def main():
     parser.add_argument("--refresh-valuation", action="store_true", default=False, help="Refresh valuation cache via yfinance during run")
     parser.add_argument("--backfill-weights", action="store_true", default=False, help="Backfill historical portfolio_weight via Dataroma p_hist")
     parser.add_argument("--scan-13g", action="store_true", default=False, help="Run SEC 13G/13D beneficial ownership scanner (P1)")
+    parser.add_argument("--html-dashboard", action="store_true", default=True, help="Generate interactive HTML dashboard (default: True)")
+    parser.add_argument("--no-html-dashboard", dest="html_dashboard", action="store_false", help="Skip interactive HTML dashboard")
     args = parser.parse_args()
 
     project_root = find_project_root()
@@ -1077,6 +1085,19 @@ def main():
     print(f"  ✅ Report saved: {latest_path}")
     print(f"  ✅ Archive saved: {archive_path}")
 
+    # 6b. Generate Interactive HTML Dashboard
+    dash_path = None
+    if getattr(args, "html_dashboard", True) and "generate_html" in p2:
+        try:
+            dash_data = p2["load_dashboard_data"](db_path)
+            html_code = p2["generate_html"](dash_data)
+            dash_path = os.path.join(out_dir, "dashboard.html")
+            with open(dash_path, "w", encoding="utf-8") as f:
+                f.write(html_code)
+            print(f"  ✅ Interactive HTML Dashboard saved: {dash_path}")
+        except Exception as e:
+            print(f"  ⚠️ HTML dashboard notice: {e}")
+
     # 7. Obsidian Sync
     if args.sync_obsidian:
         print(f"\n🔄 Step 7: Syncing to Obsidian...")
@@ -1090,6 +1111,10 @@ def main():
             print(f"  ✅ Synced to Obsidian (Overwrite-safe, zero deletions):")
             print(f"     -> {target_latest}")
             print(f"     -> {target_archive}")
+            if dash_path and os.path.exists(dash_path):
+                target_dash = os.path.join(obsidian_dir, "celebrity_strategy_dashboard.html")
+                shutil.copy2(dash_path, target_dash)
+                print(f"     -> {target_dash}")
         except Exception as e:
             print(f"  ⚠️ Obsidian sync notice: {e}")
 
