@@ -13,8 +13,13 @@ Features:
          - Transparent single Conviction Score badge with interactive hover & click
          - Standalone Scoring Algorithm & Breakdown page (companies/{ticker}_scoring.html)
       2. ⚡ SEC 13G 举牌 (Early Warnings)
-      3. 💰 成本优势买点 (Cost Window Discounts)
-      4. 🏛️ 大师全量持仓 (All Guru Holdings)
+         - 5%+ Beneficial Ownership statutory tracking (Securities Exchange Act Rule 13d-1)
+         - Educational guide card explaining 13G signaling & Denominator Paradox (Buffett vs Li Lu / Duan)
+         - Interactive client-side pagination & search
+      3. 💰 成本与击球区 (Cost Window & Valuation Matrix)
+         - Capital-weighted entry prices & multi-guru breakdown
+         - Standalone Cost Breakdown page (companies/{ticker}_cost.html)
+         - Interactive client-side pagination & sub-filters
   - Standalone Company Pages:
       - Every company/ticker links to a dedicated company HTML page (companies/{ticker}.html)
       - Company pages prominently show the company name, ticker, and clean placeholder component slots
@@ -51,6 +56,23 @@ KNOWN_TICKER_NAMES = {
     "META": "Meta Platforms Inc.",
     "TSLA": "特斯拉 (Tesla Inc.)",
     "NVDA": "英伟达 (NVIDIA Corp.)",
+    "BRK.A": "Berkshire Hathaway CL A",
+    "HGTY": "Hagerty, Inc. (经典车保险与汽车文化)",
+    "NYT": "纽约时报 (The New York Times Company)",
+    "STZ": "星座品牌 (Constellation Brands, Inc.)",
+    "POOL": "普尔公司 (Pool Corporation)",
+    "DPZ": "达美乐披萨 (Domino's Pizza, Inc.)",
+    "LILA": "自由拉丁美洲 (Liberty Latin America Ltd.)",
+    "LLYVA": "自由现场 (Liberty Live Holdings, Inc.)",
+    "DYNT": "Dynatronics Corp. (物理康复与医疗设备)",
+    "CB": "安达保险 (Chubb Limited)",
+    "VRSN": "威望迪网规 (VeriSign, Inc.)",
+    "DAL": "达美航空 (Delta Air Lines, Inc.)",
+    "LEN": "莱纳建筑 (Lennar Corporation)",
+    "SIRI": "天狼星XM (Sirius XM Holdings Inc.)",
+    "MKL": "马克尔集团 (Markel Group Inc.)",
+    "BAC": "美国银行 (Bank of America Corp.)",
+    "CVX": "雪佛龙 (Chevron Corporation)",
 }
 
 
@@ -225,11 +247,15 @@ def build_company_catalog(db_path: str) -> dict:
             if gname and gname not in catalog[t]["gurus"]:
                 catalog[t]["gurus"].append(gname)
 
-    # Fill names from sec_13g_signals
-    for r in cur.execute("SELECT subject_ticker, subject_name FROM sec_13g_signals WHERE subject_name IS NOT NULL").fetchall():
+    # Fill names & gurus from sec_13g_signals
+    for r in cur.execute("SELECT subject_ticker, subject_name, filer_name FROM sec_13g_signals WHERE subject_name IS NOT NULL").fetchall():
         t = r[0]
-        if t and t in catalog and not catalog[t]["name"]:
-            catalog[t]["name"] = clean_company_name(t, r[1])
+        if t and t in catalog:
+            if not catalog[t]["name"]:
+                catalog[t]["name"] = clean_company_name(t, r[1])
+            filer = r[2]
+            if filer and filer not in catalog[t]["gurus"]:
+                catalog[t]["gurus"].append(filer)
 
     # Fallback to KNOWN_TICKER_NAMES or ticker itself
     for t, item in catalog.items():
@@ -1350,7 +1376,7 @@ def load_dashboard_data(db_path: str):
 
     # 5. SEC 13G Early Warnings
     sec_rows = cur.execute("""
-    SELECT * FROM sec_13g_signals ORDER BY filing_date DESC LIMIT 20
+    SELECT * FROM sec_13g_signals ORDER BY filing_date DESC
     """).fetchall()
     sec_13g = [dict(r) for r in sec_rows]
 
@@ -1506,6 +1532,52 @@ def generate_html(data: dict) -> str:
         </tr>
         ''')
     cost_rows_initial_html = "".join(cost_rows_initial)
+
+    # Pre-process SEC 13G signals
+    for s in data["sec_13g"]:
+        t = s.get("subject_ticker") or ""
+        s["clean_subject_name"] = clean_company_name(t, s.get("subject_name") or "")
+        s["display_ticker"] = t or "—"
+    sec_13g_json = json.dumps(data["sec_13g"], ensure_ascii=False)
+
+    sec_rows_initial = []
+    for s in data["sec_13g"][:15]:
+        t = s.get("subject_ticker") or ""
+        cname = s["clean_subject_name"]
+        if t:
+            company_link = f'''<a href="companies/{t}.html" class="group block hover:text-emerald-400 transition-colors">
+              <span class="font-bold text-white group-hover:text-emerald-400 font-mono underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                {t}
+                <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+              </span>
+              <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[200px]">{cname}</span>
+            </a>'''
+        else:
+            company_link = f'<span class="text-gray-400">{cname}</span>'
+
+        pct_val = s.get("ownership_pct")
+        if pct_val and pct_val > 0:
+            pct_html = f'<span class="font-bold text-emerald-400 font-mono">{pct_val:.1f}%</span>'
+        else:
+            pct_html = '<span class="text-gray-500 font-normal text-[11px]">＜5% (已退出/减持)</span>'
+
+        badge_class = 'bg-red-500/20 text-red-400 border border-red-500/30 font-medium' if s.get('is_tracked_guru') else 'bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium'
+        badge_text = '🚨 大师自身举牌' if s.get('is_tracked_guru') else '🐳 主力举牌'
+
+        sec_rows_initial.append(f'''
+        <tr class="hover:bg-gray-800/40 transition-colors">
+          <td class="py-3 text-emerald-400 font-mono">{s["filing_date"]}</td>
+          <td class="py-3"><span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[11px] font-mono">{s["form_type"]}</span></td>
+          <td class="py-3 font-sans font-medium text-white">{s["filer_name"]}</td>
+          <td class="py-3 font-sans">{company_link}</td>
+          <td class="py-3 text-center">{pct_html}</td>
+          <td class="py-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] {badge_class}">{badge_text}</span></td>
+          <td class="py-3 text-right font-sans">
+            <a href="{s['url']}" target="_blank" class="text-blue-400 hover:text-blue-300 underline text-xs">查看 EDGAR ↗</a>
+          </td>
+        </tr>
+        ''')
+    initial_sec_rows_html = "".join(sec_rows_initial)
 
     if top_discount_item:
         kpi3_html = f'<a href="companies/{top_discount_item["ticker"]}.html" class="hover:text-amber-400 underline transition-colors">{top_discount_item["ticker"]}</a> <span class="text-xs text-emerald-400 font-normal">{top_discount_item["diff_pct"]:.1f}% 破发买底</span>'
@@ -1773,9 +1845,6 @@ def generate_html(data: dict) -> str:
           <button onclick="switchTab('discounts')" id="btn-discounts" class="tab-btn px-3.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
             💰 成本与击球区 ({total_cost_count})
           </button>
-          <button onclick="switchTab('holdings')" id="btn-holdings" class="tab-btn px-3.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
-            🏛️ 大师全量持仓 ({len(data["holdings"])})
-          </button>
         </div>
 
         <!-- Search & Filter Controls -->
@@ -1839,6 +1908,82 @@ def generate_html(data: dict) -> str:
 
       <!-- Tab Content 2: SEC 13G Early Warnings -->
       <div id="tab-sec13g" class="tab-panel p-6 overflow-x-auto hidden">
+        
+        <!-- SEC 13G Institutional Framework & Logic Callout -->
+        <div class="mb-6 rounded-xl bg-gradient-to-r from-purple-950/40 via-blue-950/20 to-gray-900 border border-purple-500/30 p-5 shadow-lg">
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-purple-500/20">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">⚡</span>
+              <h3 class="text-sm font-bold text-white tracking-wide">SEC Schedule 13G / 13D 举牌法定内涵与主力信号解读指引</h3>
+            </div>
+            <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono">
+              Securities Exchange Act Rule 13d-1
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs leading-relaxed">
+            <!-- Pillar 1 -->
+            <div class="bg-gray-900/80 rounded-lg p-3.5 border border-gray-800">
+              <div class="font-bold text-purple-300 mb-1.5 flex items-center gap-1.5">
+                <span>⚖️</span>
+                <span>什么是 13G 举牌？（突破 45 天滞后）</span>
+              </div>
+              <p class="text-gray-300 mb-1.5">
+                根据美国 1934 年证券交易法 Rule 13d-1：任何实体在实益拥有上市公司<strong class="text-white">已发行在外有表决权普通股超过 5%</strong> 时，必须进行法定强制披露。
+              </p>
+              <div class="text-gray-400 text-[11px]">
+                普通 13F 报表仅按季度末申报且享有 45 天宽限期（滞后严重）；而 13G/13D 属于<strong class="text-emerald-400">事件驱动型高频预警</strong>，跨过 5% 线后须在 10~45 天内火速备案，能提前数周抢跑捕捉主力突击建仓。
+              </div>
+            </div>
+
+            <!-- Pillar 2 -->
+            <div class="bg-gray-900/80 rounded-lg p-3.5 border border-gray-800">
+              <div class="font-bold text-blue-300 mb-1.5 flex items-center gap-1.5">
+                <span>🤔</span>
+                <span>为何巴菲特频出，李录/段永平为 0 起？</span>
+              </div>
+              <p class="text-gray-300 mb-1.5">
+                <strong class="text-white">巨头市值分母悖论（Denominator Paradox）：</strong>
+                李录（喜马拉雅）与段永平（H&H）重仓极度聚焦于万亿美元巨头（苹果 $3.5万亿、谷歌 $2.2万亿、拼多多 $1500亿）。
+              </p>
+              <div class="text-gray-400 text-[11px]">
+                要触发 5% 举牌：苹果需 <strong class="text-amber-400">$1750亿</strong>、拼多多需 <strong class="text-amber-400">$75亿</strong>。两位大师公开美股管理规模仅 $20亿~$150亿，<strong class="text-white">全基金 100% 买入单一巨头也物理上够不着 5% 线</strong>！而巴菲特掌管 $3000亿+，霍金斯/盖纳精耕中小盘（数千万至数亿即可买入 5%~45%），因而频繁触发举牌。
+              </div>
+            </div>
+
+            <!-- Pillar 3 -->
+            <div class="bg-gray-900/80 rounded-lg p-3.5 border border-gray-800">
+              <div class="font-bold text-emerald-300 mb-1.5 flex items-center gap-1.5">
+                <span>🎯</span>
+                <span>13G 举牌释放了什么克隆买点信号？</span>
+              </div>
+              <p class="text-gray-300 mb-1.5">
+                <strong class="text-white">① 战略级高确信锁仓：</strong> 跨过 5% 将受到 SEC 严格内幕交易与短线收益归入法规管束，非极高确信绝不举牌，一旦举牌代表数年锁仓战略。
+              </p>
+              <div class="text-gray-400 text-[11px]">
+                <strong class="text-white">② 估值安全底与流动性护城河：</strong> 机构买入 5%~40%+ 锁死了二级市场大量流通盘，遇大盘回调时形成坚实的买盘承接，构成坚不可摧的“主力成本底”。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination & Filter Controls Info Bar -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 border-b border-gray-800 pb-3">
+          <div class="flex items-center gap-2 text-xs">
+            <span class="px-2.5 py-1 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-medium">⚡ 主权级 5%+ 实益举牌全量清单</span>
+            <span class="text-gray-400 text-xs font-mono">共 {len(data["sec_13g"])} 笔披露事件</span>
+          </div>
+          <div class="flex items-center gap-3 text-xs text-gray-400 font-mono">
+            <span id="sec13gPageInfo">显示第 1-15 条 / 共 {len(data["sec_13g"])} 条</span>
+            <select id="sec13gPageSize" onchange="changeSec13gPageSize(this.value)" class="bg-gray-800 text-gray-300 rounded px-2.5 py-1 border border-gray-700 text-xs focus:outline-none">
+              <option value="15" selected>每页 15 条</option>
+              <option value="30">每页 30 条</option>
+              <option value="9999">显示全部</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Table -->
         <table class="w-full text-left text-xs">
           <thead>
             <tr class="border-b border-gray-800 text-gray-400 uppercase text-[11px] tracking-wider">
@@ -1846,41 +1991,29 @@ def generate_html(data: dict) -> str:
               <th class="pb-3 font-medium">表单类型</th>
               <th class="pb-3 font-medium">投资机构 / 申报人</th>
               <th class="pb-3 font-medium">被举牌标的 / 公司</th>
-              <th class="pb-3 font-medium text-center">持股占比</th>
+              <th class="pb-3 font-medium text-center">
+                持股占总股本比 (5%+ 举牌线)
+                <span class="block text-[9px] text-gray-500 font-normal normal-case">占发行在外总普通股本比例</span>
+              </th>
               <th class="pb-3 font-medium text-center">预警等级</th>
               <th class="pb-3 font-medium text-right">SEC 官方备案</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-800/60 font-mono" id="sec13gTbody">
-            {"".join([f'''
-            <tr class="hover:bg-gray-800/40 transition-colors">
-              <td class="py-3 text-emerald-400">{s["filing_date"]}</td>
-              <td class="py-3"><span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[11px]">{s["form_type"]}</span></td>
-              <td class="py-3 font-sans font-medium text-white">{s["filer_name"]}</td>
-              <td class="py-3 font-sans">
-                {f'''<a href="companies/{s['subject_ticker']}.html" class="group block hover:text-emerald-400 transition-colors">
-                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    {s["subject_ticker"]}
-                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
-                  </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">{clean_company_name(s['subject_ticker'], s["subject_name"])}</span>
-                </a>''' if s.get("subject_ticker") else f'''<span class="text-gray-400">{s["subject_name"]}</span>'''}
-              </td>
-              <td class="py-3 text-center font-bold text-emerald-400">
-                {str(s["ownership_pct"]) + '%' if s.get("ownership_pct") and s["ownership_pct"] > 0 else '5%+ 举牌'}
-              </td>
-              <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] {'bg-red-500/20 text-red-400 border border-red-500/30' if s.get('is_tracked_guru') else 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}">
-                  {'🚨 大师自身举牌' if s.get('is_tracked_guru') else '🐳 主力举牌'}
-                </span>
-              </td>
-              <td class="py-3 text-right font-sans">
-                <a href="{s['url']}" target="_blank" class="text-blue-400 hover:text-blue-300 underline text-xs">查看 EDGAR</a>
-              </td>
-            </tr>
-            ''' for s in data["sec_13g"]])}
+            {initial_sec_rows_html}
           </tbody>
         </table>
+
+        <!-- SEC 13G Pagination Controls -->
+        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-800 text-xs">
+          <button onclick="prevSec13gPage()" id="btnSecPrev" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+            ← 上一页
+          </button>
+          <div id="sec13gPageNumbers" class="flex items-center gap-1"></div>
+          <button onclick="nextSec13gPage()" id="btnSecNext" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+            下一页 →
+          </button>
+        </div>
       </div>
 
       <!-- Tab Content 3: Cost Discounts Matrix -->
@@ -1943,46 +2076,6 @@ def generate_html(data: dict) -> str:
           </button>
         </div>
       </div>
-
-      <!-- Tab Content 4: All Guru Holdings -->
-      <div id="tab-holdings" class="tab-panel p-6 overflow-x-auto hidden">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="border-b border-gray-800 text-gray-400 uppercase text-[11px] tracking-wider">
-              <th class="pb-3 font-medium">机构</th>
-              <th class="pb-3 font-medium">标的代码 / 公司</th>
-              <th class="pb-3 font-medium text-center">持仓占比</th>
-              <th class="pb-3 font-medium text-right">持股数量</th>
-              <th class="pb-3 font-medium text-center">季度变动</th>
-              <th class="pb-3 font-medium text-right">申报均价</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-800/60 font-mono" id="holdingsTbody">
-            {"".join([f'''
-            <tr class="hover:bg-gray-800/40 transition-colors">
-              <td class="py-3 font-sans text-gray-300 font-medium">{h.get("guru_name", h["guru_code"])}</td>
-              <td class="py-3 font-sans">
-                <a href="companies/{h['ticker']}.html" class="group block hover:text-emerald-400 transition-colors">
-                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    {h["ticker"]}
-                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
-                  </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[160px]">{clean_company_name(h['ticker'], h.get("company_name", ""))}</span>
-                </a>
-              </td>
-              <td class="py-3 text-center font-bold text-white">{h.get("portfolio_weight", 0.0):.2f}%</td>
-              <td class="py-3 text-right text-gray-400">{h.get("shares_held", 0):,}</td>
-              <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] {'badge-buy' if 'Add' in (h['activity'] or '') or 'Buy' in (h['activity'] or '') else ('badge-sell' if 'Reduce' in (h['activity'] or '') else 'badge-hold')}">
-                  {h['activity'] or '持有'}
-                </span>
-              </td>
-              <td class="py-3 text-right text-gray-300">${h.get("reported_price", 0.0):.2f}</td>
-            </tr>
-            ''' for h in data["holdings"][:50]])}
-          </tbody>
-        </table>
-      </div>
     </section>
 
   </main>
@@ -2006,6 +2099,11 @@ def generate_html(data: dict) -> str:
       if (targetBtn) {{
         targetBtn.className = 'tab-btn px-3.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
       }}
+      if (tabId === 'discounts') {{
+        renderCostTable();
+      }} else if (tabId === 'sec13g') {{
+        renderSec13gTable();
+      }}
     }}
 
     // Client-side search
@@ -2015,6 +2113,11 @@ def generate_html(data: dict) -> str:
       if (currentActiveTab === 'tab-discounts') {{
         currentCostPage = 1;
         renderCostTable();
+        return;
+      }}
+      if (currentActiveTab === 'tab-sec13g') {{
+        currentSec13gPage = 1;
+        renderSec13gTable();
         return;
       }}
 
@@ -2030,6 +2133,149 @@ def generate_html(data: dict) -> str:
           r.style.display = 'none';
         }}
       }});
+    }}
+
+    // ── Tab 2: SEC 13G Early Warnings Data & Client-Side Pagination ──────────
+    const sec13gData = {sec_13g_json};
+    let currentSec13gPage = 1;
+    let sec13gPageSize = 15;
+
+    function changeSec13gPageSize(size) {{
+      sec13gPageSize = parseInt(size, 10);
+      currentSec13gPage = 1;
+      renderSec13gTable();
+    }}
+
+    function prevSec13gPage() {{
+      if (currentSec13gPage > 1) {{
+        currentSec13gPage--;
+        renderSec13gTable();
+      }}
+    }}
+
+    function nextSec13gPage() {{
+      const filtered = getFilteredSec13gData();
+      const totalPages = Math.max(1, Math.ceil(filtered.length / sec13gPageSize));
+      if (currentSec13gPage < totalPages) {{
+        currentSec13gPage++;
+        renderSec13gTable();
+      }}
+    }}
+
+    function goToSec13gPage(p) {{
+      currentSec13gPage = p;
+      renderSec13gTable();
+    }}
+
+    function getFilteredSec13gData() {{
+      const searchEl = document.getElementById('searchInput');
+      const q = (searchEl ? searchEl.value : '').toLowerCase().trim();
+      return sec13gData.filter(item => {{
+        if (!q) return true;
+        const matchTicker = (item.subject_ticker || '').toLowerCase().includes(q);
+        const matchName = (item.clean_subject_name || item.subject_name || '').toLowerCase().includes(q);
+        const matchFiler = (item.filer_name || '').toLowerCase().includes(q);
+        const matchForm = (item.form_type || '').toLowerCase().includes(q);
+        return matchTicker || matchName || matchFiler || matchForm;
+      }});
+    }}
+
+    function renderSec13gTable() {{
+      const tbody = document.getElementById('sec13gTbody');
+      if (!tbody) return;
+
+      const filtered = getFilteredSec13gData();
+      const totalFiltered = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalFiltered / sec13gPageSize));
+
+      if (currentSec13gPage > totalPages) currentSec13gPage = totalPages;
+      if (currentSec13gPage < 1) currentSec13gPage = 1;
+
+      const startIndex = (currentSec13gPage - 1) * sec13gPageSize;
+      const endIndex = Math.min(startIndex + sec13gPageSize, totalFiltered);
+      const pageItems = filtered.slice(startIndex, endIndex);
+
+      let rowsHtml = '';
+      if (pageItems.length === 0) {{
+        rowsHtml = `<tr><td colspan="7" class="py-8 text-center text-gray-500 font-sans">暂无符合条件的 SEC 13G 举牌记录</td></tr>`;
+      }} else {{
+        pageItems.forEach(s => {{
+          const ticker = s.subject_ticker || '';
+          const name = s.clean_subject_name || s.subject_name || ticker;
+          const companyLinkHtml = ticker ? `
+            <a href="companies/${{ticker}}.html" class="group block hover:text-emerald-400 transition-colors">
+              <span class="font-bold text-white group-hover:text-emerald-400 font-mono underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                ${{ticker}}
+                <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+              </span>
+              <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[200px]">${{name}}</span>
+            </a>
+          ` : `<span class="text-gray-400">${{name}}</span>`;
+
+          const pctHtml = (s.ownership_pct && s.ownership_pct > 0)
+            ? `<span class="font-bold text-emerald-400 font-mono">${{s.ownership_pct.toFixed(1)}}%</span>`
+            : `<span class="text-gray-500 font-normal text-[11px]">＜5% (已退出/减持)</span>`;
+
+          const badgeHtml = s.is_tracked_guru
+            ? `<span class="px-2 py-0.5 rounded text-[11px] bg-red-500/20 text-red-400 border border-red-500/30 font-medium">🚨 大师自身举牌</span>`
+            : `<span class="px-2 py-0.5 rounded text-[11px] bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium">🐳 主力举牌</span>`;
+
+          rowsHtml += `
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-emerald-400 font-mono">${{s.filing_date}}</td>
+              <td class="py-3"><span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[11px] font-mono">${{s.form_type}}</span></td>
+              <td class="py-3 font-sans font-medium text-white">${{s.filer_name}}</td>
+              <td class="py-3 font-sans">${{companyLinkHtml}}</td>
+              <td class="py-3 text-center">${{pctHtml}}</td>
+              <td class="py-3 text-center">${{badgeHtml}}</td>
+              <td class="py-3 text-right font-sans">
+                <a href="${{s.url}}" target="_blank" class="text-blue-400 hover:text-blue-300 underline text-xs">查看 EDGAR ↗</a>
+              </td>
+            </tr>
+          `;
+        }});
+      }}
+      tbody.innerHTML = rowsHtml;
+
+      const infoEl = document.getElementById('sec13gPageInfo');
+      if (infoEl) {{
+        infoEl.innerText = `显示第 ${{totalFiltered > 0 ? startIndex + 1 : 0}} - ${{endIndex}} 条 / 共 ${{totalFiltered}} 条`;
+      }}
+
+      const btnPrev = document.getElementById('btnSecPrev');
+      const btnNext = document.getElementById('btnSecNext');
+      if (btnPrev) btnPrev.disabled = (currentSec13gPage === 1);
+      if (btnNext) btnNext.disabled = (currentSec13gPage === totalPages);
+
+      const pageNumbersEl = document.getElementById('sec13gPageNumbers');
+      if (pageNumbersEl) {{
+        let pBtns = '';
+        const maxVisible = 5;
+        let startP = Math.max(1, currentSec13gPage - 2);
+        let endP = Math.min(totalPages, startP + maxVisible - 1);
+        if (endP - startP < maxVisible - 1) {{
+          startP = Math.max(1, endP - maxVisible + 1);
+        }}
+
+        if (startP > 1) {{
+          pBtns += `<button onclick="goToSec13gPage(1)" class="w-7 h-7 rounded text-xs text-gray-400 hover:text-white bg-gray-800">1</button>`;
+          if (startP > 2) pBtns += `<span class="text-gray-500 px-1">...</span>`;
+        }}
+
+        for (let p = startP; p <= endP; p++) {{
+          if (p === currentSec13gPage) {{
+            pBtns += `<button class="w-7 h-7 rounded text-xs font-bold bg-purple-500 text-white">${{p}}</button>`;
+          }} else {{
+            pBtns += `<button onclick="goToSec13gPage(${{p}})" class="w-7 h-7 rounded text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700">${{p}}</button>`;
+          }}
+        }}
+
+        if (endP < totalPages) {{
+          if (endP < totalPages - 1) pBtns += `<span class="text-gray-500 px-1">...</span>`;
+          pBtns += `<button onclick="goToSec13gPage(${{totalPages}})" class="w-7 h-7 rounded text-xs text-gray-400 hover:text-white bg-gray-800">${{totalPages}}</button>`;
+        }}
+        pageNumbersEl.innerHTML = pBtns;
+      }}
     }}
 
     // ── Tab 3: Cost Window Matrix Data & Client-Side Pagination ─────────────
@@ -2322,8 +2568,9 @@ def generate_html(data: dict) -> str:
       scatterGroup.appendChild(link);
     }});
 
-    // Initialize cost matrix table pagination and filtering
+    // Initialize tables
     renderCostTable();
+    renderSec13gTable();
   </script>
 </body>
 </html>

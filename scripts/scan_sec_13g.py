@@ -100,6 +100,16 @@ KNOWN_ISSUER_TICKERS = {
     "CHEVRON": "CVX",
     "COCA COLA": "KO",
     "MOODY'S": "MCO",
+    "DYNATRONICS": "DYNT",
+    "HAGERTY": "HGTY",
+    "CHUBB": "CB",
+    "CONSTELLATION": "STZ",
+    "DOMINO": "DPZ",
+    "LIBERTY LATIN AMERICA": "LILA",
+    "LIBERTY LIVE": "LLYVA",
+    "NEW YORK TIMES": "NYT",
+    "POOL": "POOL",
+    "VERISIGN": "VRSN",
 }
 
 def _infer_ticker(name: str) -> str:

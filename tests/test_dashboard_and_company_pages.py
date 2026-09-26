@@ -35,8 +35,8 @@ class TestDashboardAndCompanyPages(unittest.TestCase):
         self.assertEqual(clean_company_name("AAPL", "Apple Inc."), "苹果公司 (Apple Inc.)")
         self.assertEqual(clean_company_name("TME", "TME - Tencent Music Entertainment Grp"), "腾讯音乐 (Tencent Music Entertainment Grp)")
         self.assertEqual(clean_company_name("PDD", "PDD - Pinduoduo Inc."), "拼多多 (PDD Holdings Inc.)")
-        self.assertEqual(clean_company_name("LEN", "Lennar Corp."), "Lennar Corp.")
-        self.assertEqual(clean_company_name("DAL", "Delta Air Lines Inc."), "Delta Air Lines Inc.")
+        self.assertEqual(clean_company_name("LEN", "Lennar Corp."), "莱纳建筑 (Lennar Corporation)")
+        self.assertEqual(clean_company_name("DAL", "Delta Air Lines Inc."), "达美航空 (Delta Air Lines, Inc.)")
         self.assertEqual(clean_company_name("BYDDY", ""), "比亚迪 (BYD Company Ltd. ADR)")
 
     def test_generate_company_html(self):
@@ -156,6 +156,31 @@ class TestDashboardAndCompanyPages(unittest.TestCase):
         self.assertIn('id="btnCostNext"', html)
         self.assertIn('filterCostTable', html)
         self.assertIn('renderCostTable', html)
+
+        # Requirement 6: Tab 4 (Holdings tab) must be removed completely (only 3 tabs remain)
+        self.assertNotIn('id="tab-holdings"', html)
+        self.assertNotIn('btn-holdings', html)
+        self.assertNotIn('🏛️ 大师全量持仓', html)
+        self.assertIn('btn-conviction', html)
+        self.assertIn('btn-sec13g', html)
+        self.assertIn('btn-discounts', html)
+
+        # Requirement 7: SEC 13G tab must include educational guide banner explaining signaling & Denominator Paradox
+        self.assertIn("SEC Schedule 13G / 13D 举牌法定内涵与主力信号解读指引", html)
+        self.assertIn("巨头市值分母悖论", html)
+        self.assertIn("Rule 13d-1", html)
+
+        # Requirement 8: SEC 13G ownership % must be clearly defined and table must have company links & pagination
+        self.assertIn("持股占总股本比 (5%+ 举牌线)", html)
+        self.assertIn("占发行在外总普通股本比例", html)
+        self.assertIn('id="tab-sec13g"', html)
+        self.assertIn('id="sec13gPageNumbers"', html)
+        self.assertIn('id="btnSecPrev"', html)
+        self.assertIn('id="btnSecNext"', html)
+        self.assertIn('renderSec13gTable', html)
+        self.assertIn('href="companies/DAL.html"', html)
+        self.assertIn('href="companies/LEN.html"', html)
+        self.assertIn('href="companies/HGTY.html"', html)
 
     def test_build_cost_matrix_multi_guru_and_discount_premium(self):
         """Test build_cost_matrix calculations: capital-weighted price, individual breakdown, discount/premium."""
