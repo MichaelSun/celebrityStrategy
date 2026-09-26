@@ -9,13 +9,15 @@ Features:
   - Interactive SVG Bar Chart: Dataroma Grand Portfolio Consensus (Clickable to company page)
   - Multi-tab navigation:
       1. 🏆 多季度决心榜 (Conviction Leaderboard)
+         - 1 Company = 1 Record (deduplicated across gurus & batches)
+         - Transparent single Conviction Score badge with interactive hover & click
+         - Standalone Scoring Algorithm & Breakdown page (companies/{ticker}_scoring.html)
       2. ⚡ SEC 13G 举牌 (Early Warnings)
       3. 💰 成本优势买点 (Cost Window Discounts)
       4. 🏛️ 大师全量持仓 (All Guru Holdings)
   - Standalone Company Pages:
       - Every company/ticker links to a dedicated company HTML page (companies/{ticker}.html)
       - Company pages prominently show the company name, ticker, and clean placeholder component slots
-      - Preserves modular architecture for future deep financial/CFO forensic analysis
   - Instant client-side search & filtering
 """
 
@@ -76,6 +78,91 @@ def clean_company_name(ticker: str, raw_name: str) -> str:
         name = KNOWN_TICKER_NAMES[t_clean]
 
     return name or KNOWN_TICKER_NAMES.get(t_clean, t_clean)
+
+
+def build_conviction_reason(group: list) -> str:
+    """Generate human-readable rationale for conviction ranking from guru actions."""
+    if not group:
+        return "大师重仓持有"
+    
+    reasons = []
+    best = group[0]
+    
+    # Check multi-quarter streaks
+    streaks = []
+    for item in group:
+        if item.get("building_streak", 0) >= 2:
+            gname = (item.get("guru_name") or item.get("guru_code", "")).split("(")[0].replace("·", "").strip()
+            streaks.append(f"{gname}连续{item['building_streak']}季建仓")
+    
+    if streaks:
+        reasons.append(" · ".join(streaks))
+    else:
+        # Check action signals
+        actions = []
+        for item in group:
+            sig = (item.get("latest_signal") or "").upper()
+            gname = (item.get("guru_name") or item.get("guru_code", "")).split("(")[0].replace("·", "").strip()
+            if any(k in sig for k in ["ADD", "BUY", "INCREASED"]):
+                if not any(gname in a for a in actions):
+                    actions.append(f"{gname}增持加仓")
+            elif "NEW" in sig:
+                if not any(gname in a for a in actions):
+                    actions.append(f"{gname}新建底仓")
+        if actions:
+            reasons.append(" · ".join(actions[:2]))
+        else:
+            reasons.append("核心底仓高位锁定")
+
+    # Add resonance tag if applicable
+    if best.get("resonance_multiplier", 1.0) > 1.0:
+        reasons.append(f"圈层共振 ×{best['resonance_multiplier']}")
+
+    return " ｜ ".join(reasons)
+
+
+def aggregate_conviction_scores(raw_convictions: list) -> list:
+    """
+    Deduplicate and aggregate conviction records so 1 Company = 1 Record.
+    Sorts by final_score descending and compiles unified rationale.
+    """
+    by_ticker = {}
+    for r in raw_convictions:
+        t = r["ticker"]
+        by_ticker.setdefault(t, []).append(r)
+
+    aggregated = []
+    for t, group in by_ticker.items():
+        # Sort group by final_score descending
+        group.sort(key=lambda x: x.get("final_score", 0.0), reverse=True)
+        best = group[0]
+
+        # Gather distinct gurus
+        gurus_seen = []
+        for item in group:
+            gname = (item.get("guru_name") or item.get("guru_code", "")).split("(")[0].replace("·", "").strip()
+            if gname and gname not in gurus_seen:
+                gurus_seen.append(gname)
+
+        reason = build_conviction_reason(group)
+
+        aggregated.append({
+            "ticker": t,
+            "company_name": best.get("company_name", ""),
+            "final_score": best.get("final_score", 0.0),
+            "raw_score": best.get("raw_score", 0),
+            "resonance_multiplier": best.get("resonance_multiplier", 1.0),
+            "building_streak": best.get("building_streak", 0),
+            "gurus_display": "、".join(gurus_seen) if gurus_seen else "机构持有",
+            "reason": reason,
+            "latest_signal": best.get("latest_signal", "HOLD"),
+            "group_items": group,
+            "best_item": best
+        })
+
+    # Sort descending by final_score
+    aggregated.sort(key=lambda x: x["final_score"], reverse=True)
+    return aggregated
 
 
 def build_company_catalog(db_path: str) -> dict:
@@ -361,6 +448,303 @@ def generate_company_html(ticker: str, meta: dict) -> str:
     return html
 
 
+def generate_scoring_detail_html(item: dict, catalog_meta: dict, rank: int) -> str:
+    """Generate a dedicated page explaining the conviction algorithm and breakdown for this company."""
+    ticker = item["ticker"]
+    company_name = catalog_meta.get("name") or ticker
+    final_score = item["final_score"]
+    gurus_display = item["gurus_display"]
+    reason = item["reason"]
+    group_items = item.get("group_items", [])
+
+    # Format each guru's calculation row
+    guru_rows_html = []
+    for g in group_items:
+        gname = g.get("guru_name") or g["guru_code"]
+        tier_num = g.get("tier", 2)
+        tier_label = f"Tier {tier_num}"
+        streak = g.get("building_streak", 0)
+        raw = g.get("raw_score", 0)
+        mult = g.get("resonance_multiplier", 1.0)
+        fscore = g.get("final_score", 0.0)
+        sig = g.get("latest_signal", "HOLD")
+
+        row_html = f"""
+        <tr class="hover:bg-gray-800/40 transition-colors">
+          <td class="py-3 font-sans text-white font-medium">
+            {gname}
+            <span class="text-[10px] ml-1.5 px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">{tier_label}</span>
+          </td>
+          <td class="py-3 text-center">
+            <span class="px-2 py-0.5 rounded text-[11px] {'bg-emerald-500/20 text-emerald-400 font-bold' if streak >= 2 else 'bg-gray-800 text-gray-400'}">
+              {f"{streak} 季连买" if streak >= 1 else "调仓/新买"}
+            </span>
+          </td>
+          <td class="py-3 text-center text-gray-300 font-mono font-bold">{raw}</td>
+          <td class="py-3 text-center font-mono font-bold {'text-blue-400' if mult > 1.0 else 'text-gray-500'}">
+            {'× ' + str(mult) if mult > 1.0 else '— (1.0×)'}
+          </td>
+          <td class="py-3 text-center text-emerald-400 font-mono font-bold text-sm">{fscore:.1f}</td>
+          <td class="py-3 text-right">
+            <span class="px-2 py-0.5 rounded text-[11px] {'badge-buy' if '买' in sig or '加' in sig or sig in ('NEW','INCREASED','ADD','BUY') else 'badge-sell'}">
+              {sig}
+            </span>
+          </td>
+        </tr>
+        """
+        guru_rows_html.append(row_html)
+
+    gurus_table_body = "".join(guru_rows_html)
+
+    # Textual step-by-step calculation narrative
+    steps_html = []
+    steps_html.append(f"<li><strong>1. 纳入最新季度审计</strong>：从最近报告期中提取所有建仓、加仓与重仓 <code>{ticker}</code> 的机构记录，共匹配到 <strong>{len(group_items)}</strong> 家受跟踪投资机构。</li>")
+    for idx, g in enumerate(group_items, start=2):
+        gname = (g.get("guru_name") or g["guru_code"]).split("(")[0].strip()
+        streak = g.get("building_streak", 0)
+        raw = g.get("raw_score", 0)
+        mult = g.get("resonance_multiplier", 1.0)
+        fscore = g.get("final_score", 0.0)
+        steps_html.append(f"<li><strong>{idx}. {gname} 独立决心测算</strong>：连续建仓 <strong>{streak}</strong> 季，回溯 6 季动作累积原始积分 <strong>{raw} 分</strong>。触发共振乘数 <strong>×{mult}</strong>，计算得出该机构决心分为 <code>{raw} × {mult} = {fscore:.1f} 分</code>。</li>")
+
+    best_item = item.get("best_item", {})
+    best_guru = (best_item.get("guru_name") or best_item.get("guru_code", "")).split("(")[0].strip()
+    steps_html.append(f"<li><strong>{len(group_items) + 2}. 标的去重与终审定级</strong>：由于一家公司在多季度榜单中仅呈现一条综合记录，系统自动提取多大师评估中的最高确信度得分（来自 <strong>{best_guru}</strong> 评估的 <code>{final_score:.1f} 分</code>）作为该标的的全网综合排名得分，并综合多大师动作生成排序理由：<em>“{reason}”</em>。</li>")
+
+    steps_list_html = "\n".join(steps_html)
+
+    html = f"""<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{company_name} ({ticker}) 排序分算法与算分推导明细 | CelebrityStrategy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {{
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }}
+    .terminal-card {{
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid rgba(55, 65, 81, 0.6);
+      backdrop-filter: blur(12px);
+    }}
+    .glow-emerald {{
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+    }}
+    .badge-buy {{
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }}
+    .badge-sell {{
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }}
+  </style>
+  <script>
+    function returnToDashboard(e) {{
+      if (e) e.preventDefault();
+      if (window.history.length > 1) {{
+        window.history.back();
+      }} else {{
+        if (window.location.pathname.includes('/docs/')) {{
+          window.location.href = '../index.html';
+        }} else if (window.location.pathname.includes('celebrity_strategy_dashboard')) {{
+          window.location.href = '../celebrity_strategy_dashboard.html';
+        }} else {{
+          window.location.href = '../dashboard.html';
+        }}
+      }}
+    }}
+  </script>
+</head>
+<body class="min-h-screen p-4 md:p-6 lg:p-8 antialiased selection:bg-emerald-500 selection:text-white">
+
+  <!-- ── Top Header Navigation Bar ────────────────────────────────────────── -->
+  <header class="max-w-5xl mx-auto mb-8 flex items-center justify-between border-b border-gray-800 pb-4">
+    <div class="flex items-center gap-3">
+      <a href="../dashboard.html" onclick="returnToDashboard(event)" class="px-3.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white transition-all text-xs font-semibold flex items-center gap-1.5 border border-gray-700">
+        <span>←</span>
+        <span>返回大盘</span>
+      </a>
+      <div class="text-xs text-gray-500 font-mono hidden sm:block">
+        CelebrityStrategy / 多季度决心榜算法明细 / <span class="text-gray-300 font-semibold">{ticker}</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-xs font-mono">
+      <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="text-gray-400">算法透明核算:</span>
+      <span class="text-emerald-400">已核准</span>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto space-y-6">
+
+    <!-- ── Hero Banner: Company Score Summary ─────────────────────────────── -->
+    <div class="terminal-card rounded-2xl p-6 md:p-8 border-l-4 border-l-emerald-500 glow-emerald">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <div class="flex items-center gap-2.5 mb-2">
+            <span class="font-mono text-sm px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">{ticker}</span>
+            <span class="text-xs px-2.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-sans">多季度决心榜第 {rank} 名</span>
+            <span class="text-xs px-2.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-sans">核心机构: {gurus_display}</span>
+          </div>
+          <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">{company_name}</h1>
+          <div class="mt-3 flex items-center gap-2 text-xs text-gray-300">
+            <span class="text-gray-400">排序理由：</span>
+            <span class="font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded">{reason}</span>
+          </div>
+        </div>
+
+        <div class="flex md:flex-col items-end justify-between md:justify-center p-4 rounded-xl bg-gray-900/80 border border-gray-800 text-right min-w-[160px]">
+          <span class="text-xs text-gray-400 uppercase tracking-wider">综合决心分值</span>
+          <span class="text-4xl font-black font-mono text-emerald-400 my-1">{final_score:.1f}</span>
+          <span class="text-[11px] text-gray-500">满分基准 30.0+</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Card 1: 📐 全局【多季度决心积分】算法规则体系 ──────────────────── -->
+    <div class="terminal-card rounded-2xl p-6 md:p-8 border border-gray-800">
+      <div class="flex items-center justify-between border-b border-gray-800 pb-4 mb-6">
+        <div>
+          <h2 class="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+            <span>📐</span> 全局【多季度决心积分】算法模型
+          </h2>
+          <p class="text-xs text-gray-400 mt-0.5">该系统如何量化顶尖价值投资大师的建仓执着度与同向共识</p>
+        </div>
+        <span class="text-xs font-mono text-emerald-400 px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/20">The Conviction Scoring Model</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <!-- Pillar 1 -->
+        <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
+          <div class="flex items-center justify-between text-emerald-400 font-bold text-xs mb-2">
+            <span>1. 动作基础积分 (Action Points)</span>
+            <span>🎯</span>
+          </div>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            回溯最近 6 个季度，每个季度动作赋予基础积分：
+          </p>
+          <ul class="text-[11px] text-gray-400 space-y-1 mt-2 font-mono">
+            <li>• ✨ 新建仓 (NEW): <span class="text-emerald-400 font-bold">+3 分</span></li>
+            <li>• 🔺 持续加仓 (ADD): <span class="text-emerald-400 font-bold">+2 分</span></li>
+            <li>• 🔵 持仓不变 (HOLD): <span class="text-gray-400 font-bold">0 分</span></li>
+            <li>• 🔻 减仓离场 (REDUCE): <span class="text-rose-400 font-bold">-1 分</span></li>
+            <li>• ❌ 清仓卖出 (SOLD): <span class="text-rose-500 font-bold">-4 分</span> (清零)</li>
+          </ul>
+        </div>
+
+        <!-- Pillar 2 -->
+        <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
+          <div class="flex items-center justify-between text-blue-400 font-bold text-xs mb-2">
+            <span>2. 连买连击机制 (Building Streak)</span>
+            <span>🔥</span>
+          </div>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            大师在多个季度<strong>连续无减持买入</strong>该标的，表明内在价值确信度极高。
+          </p>
+          <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">
+            每连续买入 1 个季度，积分向上累加，连击跨度越长（如 4 季连买、6 季连买），底仓决心越坚定。
+          </p>
+        </div>
+
+        <!-- Pillar 3 -->
+        <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
+          <div class="flex items-center justify-between text-purple-400 font-bold text-xs mb-2">
+            <span>3. 跨圈层共振 (Resonance Multiplier)</span>
+            <span>⚡</span>
+          </div>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            若多位顶级大师在同一时期<strong>同向建仓同一标的</strong>，触发高确定性共振乘数：
+          </p>
+          <ul class="text-[11px] text-gray-400 space-y-1 mt-2 font-mono">
+            <li>• Tier 1 + Tier 1 (李录+段永平/巴菲特): <span class="text-purple-400 font-bold">× 1.5</span></li>
+            <li>• Tier 1 + Tier 2 (李录+霍金斯等): <span class="text-purple-400 font-bold">× 1.3</span></li>
+            <li>• Tier 2 + Tier 2 (帕布莱+斯皮尔等): <span class="text-purple-400 font-bold">× 1.1</span></li>
+            <li>• 单一大师独家买入: <span class="text-gray-400 font-bold">× 1.0</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Core Formula Box -->
+      <div class="p-4 rounded-xl bg-gray-900/90 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <div class="text-xs text-gray-400">综合决策公式：</div>
+          <div class="text-sm md:text-base font-mono font-bold text-white mt-0.5">
+            标的综合决心分 = <span class="text-emerald-400">Max(机构回溯原始分)</span> × <span class="text-purple-400">跨圈层共振乘数</span>
+          </div>
+        </div>
+        <div class="text-[11px] text-gray-400">
+          去重规则：同一公司合并为唯一定级条目，按最高决心分降序排定全市场座次。
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Card 2: 🔍 【{company_name} ({ticker})】算分推导全流程实测明细 ── -->
+    <div class="terminal-card rounded-2xl p-6 md:p-8 border border-gray-800">
+      <div class="border-b border-gray-800 pb-4 mb-6">
+        <h2 class="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+          <span>🔍</span> 【{company_name}】算分推导全流程透明拆解
+        </h2>
+        <p class="text-xs text-gray-400 mt-0.5">每位跟踪大师对该公司的具体评分细项与最终综合认定</p>
+      </div>
+
+      <!-- Institutional Scores Breakdown Table -->
+      <div class="overflow-x-auto mb-6">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-gray-800 text-gray-400 uppercase text-[11px] tracking-wider font-mono">
+              <th class="pb-3 font-medium">持有/增持机构 (Guru)</th>
+              <th class="pb-3 font-medium text-center">连续建仓季度</th>
+              <th class="pb-3 font-medium text-center">6 季回溯原始分</th>
+              <th class="pb-3 font-medium text-center">共振加权乘数</th>
+              <th class="pb-3 font-medium text-center text-emerald-400 font-bold">机构核算得分</th>
+              <th class="pb-3 font-medium text-right">季度动作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-800/60 font-mono">
+            {gurus_table_body}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Step-by-Step Narrative -->
+      <div class="p-5 rounded-xl bg-gray-900/50 border border-gray-800">
+        <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider mb-3">算分逻辑递进流水线：</h3>
+        <ol class="text-xs text-gray-400 space-y-2.5 leading-relaxed font-sans">
+          {steps_list_html}
+        </ol>
+      </div>
+
+    </div>
+
+    <!-- ── Footer Action Navigation ──────────────────────────────────────── -->
+    <div class="flex items-center justify-between pt-4">
+      <a href="../dashboard.html" onclick="returnToDashboard(event)" class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors border border-gray-700">
+        <span>← 返回大盘仪表盘</span>
+      </a>
+      <a href="{ticker}.html" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-lg shadow-emerald-500/20">
+        <span>🏢 查看 {company_name} 独立公司档案 →</span>
+      </a>
+    </div>
+
+  </main>
+
+  <footer class="max-w-5xl mx-auto mt-12 pt-6 border-t border-gray-800 text-center text-xs text-gray-500">
+    CelebrityStrategy · 多季度决心积分算法模型解析 · {company_name} ({ticker})
+  </footer>
+
+</body>
+</html>
+"""
+    return html
+
+
 def generate_all_company_pages(db_path: str, output_companies_dir: str):
     """Generate all standalone company HTML pages into output_companies_dir."""
     catalog = build_company_catalog(db_path)
@@ -373,6 +757,22 @@ def generate_all_company_pages(db_path: str, output_companies_dir: str):
             f.write(html)
         count += 1
     print(f"  🏢 Generated {count} standalone company pages in: {output_companies_dir}")
+    return count
+
+
+def generate_all_scoring_pages(aggregated_convictions: list, catalog: dict, output_companies_dir: str):
+    """Generate dedicated scoring breakdown pages for all conviction leaderboard companies."""
+    os.makedirs(output_companies_dir, exist_ok=True)
+    count = 0
+    for rank, item in enumerate(aggregated_convictions, start=1):
+        ticker = item["ticker"]
+        cat_meta = catalog.get(ticker, {})
+        html = generate_scoring_detail_html(item, cat_meta, rank)
+        target_file = os.path.join(output_companies_dir, f"{ticker}_scoring.html")
+        with open(target_file, "w", encoding="utf-8") as f:
+            f.write(html)
+        count += 1
+    print(f"  📐 Generated {count} conviction scoring detail pages in: {output_companies_dir}")
     return count
 
 
@@ -401,16 +801,24 @@ def load_dashboard_data(db_path: str):
     val_rows = cur.execute("SELECT * FROM valuation_cache").fetchall()
     valuations = {r["ticker"]: dict(r) for r in val_rows}
 
-    # 4. Conviction Scores (Top 30)
-    conv_rows = cur.execute("""
-    SELECT cs.*, gm.name as guru_name, gm.tier
-    FROM conviction_scores cs
-    LEFT JOIN guru_meta gm ON cs.guru_code = gm.code
-    WHERE cs.latest_signal != 'SOLD' AND cs.final_score > 0
-    ORDER BY cs.final_score DESC
-    LIMIT 30
-    """).fetchall()
-    convictions = [dict(r) for r in conv_rows]
+    # 4. Conviction Scores: Extract ONLY latest computed_at and aggregate by company
+    latest_conv_date_row = cur.execute("SELECT MAX(computed_at) FROM conviction_scores").fetchone()
+    latest_conv_date = latest_conv_date_row[0] if latest_conv_date_row and latest_conv_date_row[0] else ""
+
+    if latest_conv_date:
+        conv_rows = cur.execute("""
+        SELECT cs.*, gm.name as guru_name, gm.tier
+        FROM conviction_scores cs
+        LEFT JOIN guru_meta gm ON cs.guru_code = gm.code
+        WHERE cs.computed_at = ? AND cs.latest_signal != 'SOLD' AND cs.final_score > 0
+        ORDER BY cs.final_score DESC
+        """, (latest_conv_date,)).fetchall()
+        raw_convictions = [dict(r) for r in conv_rows]
+    else:
+        raw_convictions = []
+
+    # Aggregate by company (1 Company = 1 Record)
+    convictions = aggregate_conviction_scores(raw_convictions)
 
     # 5. SEC 13G Early Warnings
     sec_rows = cur.execute("""
@@ -575,7 +983,7 @@ def generate_html(data: dict) -> str:
         <div>
           <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
             CelebrityStrategy
-            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Terminal v2.6</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Terminal v2.7</span>
           </h1>
           <p class="text-xs md:text-sm text-gray-400 mt-0.5">
             顶尖价值投资机构 13F & 13G 变动审计 · 多季度决心积分 · 成本优势击球区雷达
@@ -775,19 +1183,16 @@ def generate_html(data: dict) -> str:
         </div>
       </div>
 
-      <!-- Tab Content 1: Conviction Leaderboard -->
+      <!-- Tab Content 1: Conviction Leaderboard (1 Company = 1 Record, Clickable Score) -->
       <div id="tab-conviction" class="tab-panel p-6 overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
             <tr class="border-b border-gray-800 text-gray-400 uppercase text-[11px] tracking-wider">
               <th class="pb-3 font-medium">排名</th>
               <th class="pb-3 font-medium">标的代码 / 公司</th>
-              <th class="pb-3 font-medium">核心机构</th>
-              <th class="pb-3 font-medium text-center">原始分</th>
-              <th class="pb-3 font-medium text-center">共振乘数</th>
-              <th class="pb-3 font-medium text-center text-emerald-400 font-bold">最终决心积分</th>
-              <th class="pb-3 font-medium text-center">连续季度</th>
-              <th class="pb-3 font-medium">共振大师伙伴</th>
+              <th class="pb-3 font-medium">核心持有机构</th>
+              <th class="pb-3 font-medium">排序理由 (建仓轨迹与逻辑)</th>
+              <th class="pb-3 font-medium text-center text-emerald-400 font-bold">综合决心分值</th>
               <th class="pb-3 font-medium text-right">季度动作</th>
             </tr>
           </thead>
@@ -804,25 +1209,25 @@ def generate_html(data: dict) -> str:
                   <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">{clean_company_name(c['ticker'], c.get("company_name", ""))}</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">{c["guru_name"]}</td>
-              <td class="py-3 text-center text-gray-400">{c["raw_score"]}</td>
-              <td class="py-3 text-center font-bold {'text-blue-400' if c['resonance_multiplier'] > 1.0 else 'text-gray-500'}">
-                {'×' + str(c['resonance_multiplier']) if c['resonance_multiplier'] > 1.0 else '—'}
+              <td class="py-3 font-sans text-gray-300 font-medium">{c["gurus_display"]}</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">{c["reason"]}</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">{c["final_score"]:.1f}</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] {'bg-emerald-500/20 text-emerald-400 font-bold' if c['building_streak'] >= 3 else 'bg-gray-800 text-gray-400'}">
-                  {str(c['building_streak']) + ' 季连买' if c['building_streak'] >= 1 else '调仓/新买'}
-                </span>
+                <a href="companies/{c['ticker']}_scoring.html" 
+                   title="点击查看【{clean_company_name(c['ticker'], c.get('company_name',''))}】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>{c['final_score']:.1f}</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">{c.get("resonance_gurus") or '—'}</td>
               <td class="py-3 text-right">
-                <span class="px-2 py-0.5 rounded text-[11px] {'badge-buy' if '买' in (c.get('latest_signal') or '') or '加' in (c.get('latest_signal') or '') or c.get('latest_signal') in ('NEW','INCREASED') else 'badge-sell'}">
+                <span class="px-2 py-0.5 rounded text-[11px] {'badge-buy' if '买' in (c.get('latest_signal') or '') or '加' in (c.get('latest_signal') or '') or c.get('latest_signal') in ('NEW','INCREASED','ADD','BUY') else 'badge-sell'}">
                   {c.get("latest_signal", "HOLD")}
                 </span>
               </td>
             </tr>
-            ''' for i, c in enumerate(data["convictions"][:20])])}
+            ''' for i, c in enumerate(data["convictions"][:30])])}
           </tbody>
         </table>
       </div>
@@ -1085,6 +1490,7 @@ def main():
 
     print(f"📊 Loading data from SQLite database: {db_path}...")
     data = load_dashboard_data(db_path)
+    catalog = build_company_catalog(db_path)
 
     print(f"🎨 Rendering institutional HTML terminal...")
     html_content = generate_html(data)
@@ -1096,9 +1502,10 @@ def main():
         f.write(html_content)
     print(f"  ✅ Dashboard saved locally: {local_output}")
 
-    # 1b. Generate company standalone pages in reports/companies/
+    # 1b. Generate company standalone pages & scoring pages in reports/companies/
     reports_comp_dir = os.path.join(os.path.dirname(local_output), "companies")
     generate_all_company_pages(db_path, reports_comp_dir)
+    generate_all_scoring_pages(data["convictions"], catalog, reports_comp_dir)
 
     # 2. Save to docs/index.html (GitHub Pages & Cloudflare Pages standard root)
     docs_output = os.path.join(PROJECT_ROOT, "docs", "index.html")
@@ -1107,9 +1514,10 @@ def main():
         f.write(html_content)
     print(f"  ✅ Web deployment asset saved: {docs_output}")
 
-    # 2b. Generate company standalone pages in docs/companies/
+    # 2b. Generate company standalone pages & scoring pages in docs/companies/
     docs_comp_dir = os.path.join(PROJECT_ROOT, "docs", "companies")
     generate_all_company_pages(db_path, docs_comp_dir)
+    generate_all_scoring_pages(data["convictions"], catalog, docs_comp_dir)
 
     # 3. Save to Artifact Directory for conversation display
     artifact_path = os.path.join(ARTIFACT_DIR, "dashboard.html")
@@ -1119,6 +1527,7 @@ def main():
 
     artifact_comp_dir = os.path.join(ARTIFACT_DIR, "companies")
     generate_all_company_pages(db_path, artifact_comp_dir)
+    generate_all_scoring_pages(data["convictions"], catalog, artifact_comp_dir)
 
     # 4. Also sync to Obsidian if available
     obsidian_dir = "/Users/michael/Library/Mobile Documents/iCloud~md~obsidian/Documents/3.Investment/持仓参考"
@@ -1130,8 +1539,9 @@ def main():
 
         obsidian_comp_dir = os.path.join(obsidian_dir, "companies")
         generate_all_company_pages(db_path, obsidian_comp_dir)
+        generate_all_scoring_pages(data["convictions"], catalog, obsidian_comp_dir)
 
-    print("\n🎉 Institutional HTML Dashboard & All Standalone Company Pages Generated Successfully!")
+    print("\n🎉 Institutional HTML Dashboard, Company Pages & Scoring Breakdown Pages Generated Successfully!")
 
 
 if __name__ == "__main__":

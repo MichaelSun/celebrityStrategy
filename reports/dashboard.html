@@ -72,7 +72,7 @@
         <div>
           <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
             CelebrityStrategy
-            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Terminal v2.6</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Terminal v2.7</span>
           </h1>
           <p class="text-xs md:text-sm text-gray-400 mt-0.5">
             顶尖价值投资机构 13F & 13G 变动审计 · 多季度决心积分 · 成本优势击球区雷达
@@ -94,7 +94,7 @@
       </div>
       <div class="px-3 py-1.5 rounded-lg terminal-card flex items-center gap-2">
         <span class="text-gray-400">更新时间:</span>
-        <span class="text-gray-300 font-mono">2026-09-25 22:03</span>
+        <span class="text-gray-300 font-mono">2026-09-25 22:46</span>
       </div>
     </div>
   </header>
@@ -333,7 +333,7 @@
         <!-- Tab Buttons -->
         <div class="flex items-center gap-1 sm:gap-2 flex-wrap text-xs md:text-sm font-medium" id="tabButtons">
           <button onclick="switchTab('conviction')" id="btn-conviction" class="tab-btn px-3.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-            🏆 多季度决心榜 (30)
+            🏆 多季度决心榜 (76)
           </button>
           <button onclick="switchTab('sec13g')" id="btn-sec13g" class="tab-btn px-3.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
             ⚡ SEC 13G 举牌 (14)
@@ -356,19 +356,16 @@
         </div>
       </div>
 
-      <!-- Tab Content 1: Conviction Leaderboard -->
+      <!-- Tab Content 1: Conviction Leaderboard (1 Company = 1 Record, Clickable Score) -->
       <div id="tab-conviction" class="tab-panel p-6 overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
             <tr class="border-b border-gray-800 text-gray-400 uppercase text-[11px] tracking-wider">
               <th class="pb-3 font-medium">排名</th>
               <th class="pb-3 font-medium">标的代码 / 公司</th>
-              <th class="pb-3 font-medium">核心机构</th>
-              <th class="pb-3 font-medium text-center">原始分</th>
-              <th class="pb-3 font-medium text-center">共振乘数</th>
-              <th class="pb-3 font-medium text-center text-emerald-400 font-bold">最终决心积分</th>
-              <th class="pb-3 font-medium text-center">连续季度</th>
-              <th class="pb-3 font-medium">共振大师伙伴</th>
+              <th class="pb-3 font-medium">核心持有机构</th>
+              <th class="pb-3 font-medium">排序理由 (建仓轨迹与逻辑)</th>
+              <th class="pb-3 font-medium text-center text-emerald-400 font-bold">综合决心分值</th>
               <th class="pb-3 font-medium text-right">季度动作</th>
             </tr>
           </thead>
@@ -385,18 +382,18 @@
                   <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">拼多多 (PDD Holdings Inc.)</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">段永平 (Duan Yongping)</td>
-              <td class="py-3 text-center text-gray-400">17</td>
-              <td class="py-3 text-center font-bold text-blue-400">
-                ×1.5
+              <td class="py-3 font-sans text-gray-300 font-medium">段永平、李录</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">段永平连续2季建仓 · 李录连续6季建仓 ｜ 圈层共振 ×1.5</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">25.5</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-gray-800 text-gray-400">
-                  2 季连买
-                </span>
+                <a href="companies/PDD_scoring.html" 
+                   title="点击查看【拼多多 (PDD Holdings Inc.)】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>25.5</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">李录+李录+李录+李录+李录</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
                   INCREASED
@@ -415,18 +412,18 @@
                   <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">Berkshire Hathaway CL B</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">段永平 (Duan Yongping)</td>
-              <td class="py-3 text-center text-gray-400">15</td>
-              <td class="py-3 text-center font-bold text-blue-400">
-                ×1.5
+              <td class="py-3 font-sans text-gray-300 font-medium">段永平、李录</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">李录连续5季建仓 ｜ 圈层共振 ×1.5</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">22.5</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-gray-800 text-gray-400">
-                  调仓/新买
-                </span>
+                <a href="companies/BRK.B_scoring.html" 
+                   title="点击查看【Berkshire Hathaway CL B】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>22.5</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">李录+李录+李录+李录+李录</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
                   INCREASED
@@ -437,29 +434,29 @@
             <tr class="hover:bg-gray-800/40 transition-colors">
               <td class="py-3 text-gray-500">3</td>
               <td class="py-3 font-sans">
-                <a href="companies/PDD.html" class="group block hover:text-emerald-400 transition-colors">
+                <a href="companies/DHI.html" class="group block hover:text-emerald-400 transition-colors">
                   <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    PDD
+                    DHI
                     <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
                   </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">拼多多 (PDD Holdings Inc.)</span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">DHI</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">段永平 (Duan Yongping)</td>
-              <td class="py-3 text-center text-gray-400">13</td>
-              <td class="py-3 text-center font-bold text-blue-400">
-                ×1.5
+              <td class="py-3 font-sans text-gray-300 font-medium">沃伦巴菲特</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">沃伦巴菲特连续4季建仓</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">19.5</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-gray-800 text-gray-400">
-                  2 季连买
-                </span>
+                <a href="companies/DHI_scoring.html" 
+                   title="点击查看【DHI】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>12.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">李录+李录+李录</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
-                  INCREASED
+                  NEW
                 </span>
               </td>
             </tr>
@@ -467,26 +464,26 @@
             <tr class="hover:bg-gray-800/40 transition-colors">
               <td class="py-3 text-gray-500">4</td>
               <td class="py-3 font-sans">
-                <a href="companies/PDD.html" class="group block hover:text-emerald-400 transition-colors">
+                <a href="companies/DIS.html" class="group block hover:text-emerald-400 transition-colors">
                   <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    PDD
+                    DIS
                     <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
                   </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">拼多多 (PDD Holdings Inc.)</span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">DIS</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">李录 (Li Lu)</td>
-              <td class="py-3 text-center text-gray-400">13</td>
-              <td class="py-3 text-center font-bold text-blue-400">
-                ×1.5
+              <td class="py-3 font-sans text-gray-300 font-medium">段永平</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">段永平增持加仓</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">19.5</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">
-                  6 季连买
-                </span>
+                <a href="companies/DIS_scoring.html" 
+                   title="点击查看【DIS】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>10.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">段永平+段永平+段永平+段永平+段永平</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
                   INCREASED
@@ -497,26 +494,26 @@
             <tr class="hover:bg-gray-800/40 transition-colors">
               <td class="py-3 text-gray-500">5</td>
               <td class="py-3 font-sans">
-                <a href="companies/BRK.B.html" class="group block hover:text-emerald-400 transition-colors">
+                <a href="companies/DAL.html" class="group block hover:text-emerald-400 transition-colors">
                   <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    BRK.B
+                    DAL
                     <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
                   </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">Berkshire Hathaway CL B</span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">DAL</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">段永平 (Duan Yongping)</td>
-              <td class="py-3 text-center text-gray-400">11</td>
-              <td class="py-3 text-center font-bold text-blue-400">
-                ×1.5
+              <td class="py-3 font-sans text-gray-300 font-medium">沃伦巴菲特</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">沃伦巴菲特连续4季建仓</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">16.5</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-gray-800 text-gray-400">
-                  调仓/新买
-                </span>
+                <a href="companies/DAL_scoring.html" 
+                   title="点击查看【DAL】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>8.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">李录+李录+李录</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
                   INCREASED
@@ -527,26 +524,26 @@
             <tr class="hover:bg-gray-800/40 transition-colors">
               <td class="py-3 text-gray-500">6</td>
               <td class="py-3 font-sans">
-                <a href="companies/BRK.B.html" class="group block hover:text-emerald-400 transition-colors">
+                <a href="companies/GOOG.html" class="group block hover:text-emerald-400 transition-colors">
                   <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    BRK.B
+                    GOOG
                     <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
                   </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">Berkshire Hathaway CL B</span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">谷歌 Alphabet Inc. Class C</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">李录 (Li Lu)</td>
-              <td class="py-3 text-center text-gray-400">10</td>
-              <td class="py-3 text-center font-bold text-blue-400">
-                ×1.5
+              <td class="py-3 font-sans text-gray-300 font-medium">沃伦巴菲特</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">沃伦巴菲特连续4季建仓</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">15.0</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">
-                  5 季连买
-                </span>
+                <a href="companies/GOOG_scoring.html" 
+                   title="点击查看【谷歌 Alphabet Inc. Class C】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>8.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">段永平+段永平+段永平+段永平+段永平</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
                   INCREASED
@@ -557,26 +554,26 @@
             <tr class="hover:bg-gray-800/40 transition-colors">
               <td class="py-3 text-gray-500">7</td>
               <td class="py-3 font-sans">
-                <a href="companies/PDD.html" class="group block hover:text-emerald-400 transition-colors">
+                <a href="companies/GOOGL.html" class="group block hover:text-emerald-400 transition-colors">
                   <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    PDD
+                    GOOGL
                     <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
                   </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">拼多多 (PDD Holdings Inc.)</span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">谷歌 Alphabet Inc. Class A</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">李录 (Li Lu)</td>
-              <td class="py-3 text-center text-gray-400">9</td>
-              <td class="py-3 text-center font-bold text-blue-400">
-                ×1.5
+              <td class="py-3 font-sans text-gray-300 font-medium">沃伦巴菲特</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">沃伦巴菲特连续4季建仓</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">13.5</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">
-                  4 季连买
-                </span>
+                <a href="companies/GOOGL_scoring.html" 
+                   title="点击查看【谷歌 Alphabet Inc. Class A】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>8.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">段永平+段永平+段永平</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
                   INCREASED
@@ -587,29 +584,29 @@
             <tr class="hover:bg-gray-800/40 transition-colors">
               <td class="py-3 text-gray-500">8</td>
               <td class="py-3 font-sans">
-                <a href="companies/DHI.html" class="group block hover:text-emerald-400 transition-colors">
+                <a href="companies/LEN.html" class="group block hover:text-emerald-400 transition-colors">
                   <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    DHI
+                    LEN
                     <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
                   </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">DHI</span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">LEN</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">沃伦·巴菲特 (Warren Buffett)</td>
-              <td class="py-3 text-center text-gray-400">12</td>
-              <td class="py-3 text-center font-bold text-gray-500">
-                —
+              <td class="py-3 font-sans text-gray-300 font-medium">沃伦巴菲特</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">沃伦巴菲特连续4季建仓</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">12.0</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">
-                  4 季连买
-                </span>
+                <a href="companies/LEN_scoring.html" 
+                   title="点击查看【LEN】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>8.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">—</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
-                  NEW
+                  INCREASED
                 </span>
               </td>
             </tr>
@@ -617,26 +614,26 @@
             <tr class="hover:bg-gray-800/40 transition-colors">
               <td class="py-3 text-gray-500">9</td>
               <td class="py-3 font-sans">
-                <a href="companies/DIS.html" class="group block hover:text-emerald-400 transition-colors">
+                <a href="companies/LEN.B.html" class="group block hover:text-emerald-400 transition-colors">
                   <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    DIS
+                    LEN.B
                     <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
                   </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">DIS</span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">LEN.B</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">段永平 (Duan Yongping)</td>
-              <td class="py-3 text-center text-gray-400">10</td>
-              <td class="py-3 text-center font-bold text-gray-500">
-                —
+              <td class="py-3 font-sans text-gray-300 font-medium">沃伦巴菲特</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">沃伦巴菲特连续4季建仓</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">10.0</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-gray-800 text-gray-400">
-                  调仓/新买
-                </span>
+                <a href="companies/LEN.B_scoring.html" 
+                   title="点击查看【LEN.B】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>8.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">—</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
                   INCREASED
@@ -647,26 +644,26 @@
             <tr class="hover:bg-gray-800/40 transition-colors">
               <td class="py-3 text-gray-500">10</td>
               <td class="py-3 font-sans">
-                <a href="companies/BRK.B.html" class="group block hover:text-emerald-400 transition-colors">
+                <a href="companies/M.html" class="group block hover:text-emerald-400 transition-colors">
                   <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    BRK.B
+                    M
                     <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
                   </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">Berkshire Hathaway CL B</span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">M</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">李录 (Li Lu)</td>
-              <td class="py-3 text-center text-gray-400">6</td>
-              <td class="py-3 text-center font-bold text-blue-400">
-                ×1.5
+              <td class="py-3 font-sans text-gray-300 font-medium">沃伦巴菲特</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">沃伦巴菲特连续4季建仓</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">9.0</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">
-                  3 季连买
-                </span>
+                <a href="companies/M_scoring.html" 
+                   title="点击查看【M】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>8.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">段永平+段永平+段永平</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
                   INCREASED
@@ -677,26 +674,26 @@
             <tr class="hover:bg-gray-800/40 transition-colors">
               <td class="py-3 text-gray-500">11</td>
               <td class="py-3 font-sans">
-                <a href="companies/DAL.html" class="group block hover:text-emerald-400 transition-colors">
+                <a href="companies/NYT.html" class="group block hover:text-emerald-400 transition-colors">
                   <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    DAL
+                    NYT
                     <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
                   </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">DAL</span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">NYT</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">沃伦·巴菲特 (Warren Buffett)</td>
-              <td class="py-3 text-center text-gray-400">8</td>
-              <td class="py-3 text-center font-bold text-gray-500">
-                —
+              <td class="py-3 font-sans text-gray-300 font-medium">沃伦巴菲特</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">沃伦巴菲特连续4季建仓</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">8.0</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">
-                  4 季连买
-                </span>
+                <a href="companies/NYT_scoring.html" 
+                   title="点击查看【NYT】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>8.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">—</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
                   INCREASED
@@ -707,186 +704,6 @@
             <tr class="hover:bg-gray-800/40 transition-colors">
               <td class="py-3 text-gray-500">12</td>
               <td class="py-3 font-sans">
-                <a href="companies/GOOG.html" class="group block hover:text-emerald-400 transition-colors">
-                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    GOOG
-                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
-                  </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">谷歌 Alphabet Inc. Class C</span>
-                </a>
-              </td>
-              <td class="py-3 font-sans text-gray-300">沃伦·巴菲特 (Warren Buffett)</td>
-              <td class="py-3 text-center text-gray-400">8</td>
-              <td class="py-3 text-center font-bold text-gray-500">
-                —
-              </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">8.0</td>
-              <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">
-                  4 季连买
-                </span>
-              </td>
-              <td class="py-3 font-sans text-xs text-blue-300">—</td>
-              <td class="py-3 text-right">
-                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
-                  INCREASED
-                </span>
-              </td>
-            </tr>
-            
-            <tr class="hover:bg-gray-800/40 transition-colors">
-              <td class="py-3 text-gray-500">13</td>
-              <td class="py-3 font-sans">
-                <a href="companies/GOOGL.html" class="group block hover:text-emerald-400 transition-colors">
-                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    GOOGL
-                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
-                  </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">谷歌 Alphabet Inc. Class A</span>
-                </a>
-              </td>
-              <td class="py-3 font-sans text-gray-300">沃伦·巴菲特 (Warren Buffett)</td>
-              <td class="py-3 text-center text-gray-400">8</td>
-              <td class="py-3 text-center font-bold text-gray-500">
-                —
-              </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">8.0</td>
-              <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">
-                  4 季连买
-                </span>
-              </td>
-              <td class="py-3 font-sans text-xs text-blue-300">—</td>
-              <td class="py-3 text-right">
-                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
-                  INCREASED
-                </span>
-              </td>
-            </tr>
-            
-            <tr class="hover:bg-gray-800/40 transition-colors">
-              <td class="py-3 text-gray-500">14</td>
-              <td class="py-3 font-sans">
-                <a href="companies/LEN.html" class="group block hover:text-emerald-400 transition-colors">
-                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    LEN
-                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
-                  </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">LEN</span>
-                </a>
-              </td>
-              <td class="py-3 font-sans text-gray-300">沃伦·巴菲特 (Warren Buffett)</td>
-              <td class="py-3 text-center text-gray-400">8</td>
-              <td class="py-3 text-center font-bold text-gray-500">
-                —
-              </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">8.0</td>
-              <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">
-                  4 季连买
-                </span>
-              </td>
-              <td class="py-3 font-sans text-xs text-blue-300">—</td>
-              <td class="py-3 text-right">
-                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
-                  INCREASED
-                </span>
-              </td>
-            </tr>
-            
-            <tr class="hover:bg-gray-800/40 transition-colors">
-              <td class="py-3 text-gray-500">15</td>
-              <td class="py-3 font-sans">
-                <a href="companies/LEN.B.html" class="group block hover:text-emerald-400 transition-colors">
-                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    LEN.B
-                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
-                  </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">LEN.B</span>
-                </a>
-              </td>
-              <td class="py-3 font-sans text-gray-300">沃伦·巴菲特 (Warren Buffett)</td>
-              <td class="py-3 text-center text-gray-400">8</td>
-              <td class="py-3 text-center font-bold text-gray-500">
-                —
-              </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">8.0</td>
-              <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">
-                  4 季连买
-                </span>
-              </td>
-              <td class="py-3 font-sans text-xs text-blue-300">—</td>
-              <td class="py-3 text-right">
-                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
-                  INCREASED
-                </span>
-              </td>
-            </tr>
-            
-            <tr class="hover:bg-gray-800/40 transition-colors">
-              <td class="py-3 text-gray-500">16</td>
-              <td class="py-3 font-sans">
-                <a href="companies/M.html" class="group block hover:text-emerald-400 transition-colors">
-                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    M
-                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
-                  </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">M</span>
-                </a>
-              </td>
-              <td class="py-3 font-sans text-gray-300">沃伦·巴菲特 (Warren Buffett)</td>
-              <td class="py-3 text-center text-gray-400">8</td>
-              <td class="py-3 text-center font-bold text-gray-500">
-                —
-              </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">8.0</td>
-              <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">
-                  4 季连买
-                </span>
-              </td>
-              <td class="py-3 font-sans text-xs text-blue-300">—</td>
-              <td class="py-3 text-right">
-                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
-                  INCREASED
-                </span>
-              </td>
-            </tr>
-            
-            <tr class="hover:bg-gray-800/40 transition-colors">
-              <td class="py-3 text-gray-500">17</td>
-              <td class="py-3 font-sans">
-                <a href="companies/NYT.html" class="group block hover:text-emerald-400 transition-colors">
-                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    NYT
-                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
-                  </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">NYT</span>
-                </a>
-              </td>
-              <td class="py-3 font-sans text-gray-300">沃伦·巴菲特 (Warren Buffett)</td>
-              <td class="py-3 text-center text-gray-400">8</td>
-              <td class="py-3 text-center font-bold text-gray-500">
-                —
-              </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">8.0</td>
-              <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 font-bold">
-                  4 季连买
-                </span>
-              </td>
-              <td class="py-3 font-sans text-xs text-blue-300">—</td>
-              <td class="py-3 text-right">
-                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
-                  INCREASED
-                </span>
-              </td>
-            </tr>
-            
-            <tr class="hover:bg-gray-800/40 transition-colors">
-              <td class="py-3 text-gray-500">18</td>
-              <td class="py-3 font-sans">
                 <a href="companies/BABA.html" class="group block hover:text-emerald-400 transition-colors">
                   <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
                     BABA
@@ -895,18 +712,18 @@
                   <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">阿里巴巴 (Alibaba Group Holding Ltd.)</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">段永平 (Duan Yongping)</td>
-              <td class="py-3 text-center text-gray-400">7</td>
-              <td class="py-3 text-center font-bold text-gray-500">
-                —
+              <td class="py-3 font-sans text-gray-300 font-medium">段永平</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">段永平新建底仓</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">7.0</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-gray-800 text-gray-400">
-                  调仓/新买
-                </span>
+                <a href="companies/BABA_scoring.html" 
+                   title="点击查看【阿里巴巴 (Alibaba Group Holding Ltd.)】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>7.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">—</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
                   NEW
@@ -915,28 +732,208 @@
             </tr>
             
             <tr class="hover:bg-gray-800/40 transition-colors">
-              <td class="py-3 text-gray-500">19</td>
+              <td class="py-3 text-gray-500">13</td>
               <td class="py-3 font-sans">
-                <a href="companies/DHI.html" class="group block hover:text-emerald-400 transition-colors">
+                <a href="companies/CROX.html" class="group block hover:text-emerald-400 transition-colors">
                   <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    DHI
+                    CROX
                     <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
                   </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">DHI</span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">CROX</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">沃伦·巴菲特 (Warren Buffett)</td>
-              <td class="py-3 text-center text-gray-400">6</td>
-              <td class="py-3 text-center font-bold text-gray-500">
-                —
+              <td class="py-3 font-sans text-gray-300 font-medium">李录</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">李录连续2季建仓</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">6.0</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-gray-800 text-gray-400">
-                  2 季连买
+                <a href="companies/CROX_scoring.html" 
+                   title="点击查看【CROX】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>5.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-sell">
+                  NO_CHANGE
                 </span>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">—</td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">14</td>
+              <td class="py-3 font-sans">
+                <a href="companies/TME.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    TME
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">腾讯音乐 (Tencent Music Entertainment Grp)</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">李录、梅森霍金斯</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">梅森霍金斯新建底仓 ｜ 圈层共振 ×1.5</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/TME_scoring.html" 
+                   title="点击查看【腾讯音乐 (Tencent Music Entertainment Grp)】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>4.5</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-sell">
+                  NO_CHANGE
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">15</td>
+              <td class="py-3 font-sans">
+                <a href="companies/NFLX.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    NFLX
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">NFLX</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">特里史密斯、汤姆盖纳</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">特里史密斯新建底仓 · 汤姆盖纳新建底仓 ｜ 圈层共振 ×1.3</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/NFLX_scoring.html" 
+                   title="点击查看【NFLX】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.9</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
+                  NEW
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">16</td>
+              <td class="py-3 font-sans">
+                <a href="companies/ABT.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    ABT
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">ABT</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">梅森霍金斯</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">梅森霍金斯新建底仓</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/ABT_scoring.html" 
+                   title="点击查看【ABT】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
+                  NEW
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">17</td>
+              <td class="py-3 font-sans">
+                <a href="companies/APP.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    APP
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">APP</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">特里史密斯</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">特里史密斯新建底仓</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/APP_scoring.html" 
+                   title="点击查看【APP】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
+                  NEW
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">18</td>
+              <td class="py-3 font-sans">
+                <a href="companies/CRCL.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    CRCL
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">CRCL</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">段永平</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">核心底仓高位锁定</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/CRCL_scoring.html" 
+                   title="点击查看【CRCL】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-sell">
+                  NO_CHANGE
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">19</td>
+              <td class="py-3 font-sans">
+                <a href="companies/FICO.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    FICO
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">FICO</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">特里史密斯</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">特里史密斯新建底仓</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/FICO_scoring.html" 
+                   title="点击查看【FICO】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
                   NEW
@@ -947,29 +944,329 @@
             <tr class="hover:bg-gray-800/40 transition-colors">
               <td class="py-3 text-gray-500">20</td>
               <td class="py-3 font-sans">
-                <a href="companies/DIS.html" class="group block hover:text-emerald-400 transition-colors">
+                <a href="companies/GEV.html" class="group block hover:text-emerald-400 transition-colors">
                   <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
-                    DIS
+                    GEV
                     <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
                   </span>
-                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">DIS</span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">GEV</span>
                 </a>
               </td>
-              <td class="py-3 font-sans text-gray-300">段永平 (Duan Yongping)</td>
-              <td class="py-3 text-center text-gray-400">6</td>
-              <td class="py-3 text-center font-bold text-gray-500">
-                —
+              <td class="py-3 font-sans text-gray-300 font-medium">特里史密斯</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">特里史密斯新建底仓</span>
               </td>
-              <td class="py-3 text-center font-bold text-emerald-400 text-sm">6.0</td>
               <td class="py-3 text-center">
-                <span class="px-2 py-0.5 rounded text-[11px] bg-gray-800 text-gray-400">
-                  调仓/新买
-                </span>
+                <a href="companies/GEV_scoring.html" 
+                   title="点击查看【GEV】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
               </td>
-              <td class="py-3 font-sans text-xs text-blue-300">—</td>
               <td class="py-3 text-right">
                 <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
-                  INCREASED
+                  NEW
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">21</td>
+              <td class="py-3 font-sans">
+                <a href="companies/IDCC.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    IDCC
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">IDCC</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">特里史密斯</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">特里史密斯新建底仓</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/IDCC_scoring.html" 
+                   title="点击查看【IDCC】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
+                  NEW
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">22</td>
+              <td class="py-3 font-sans">
+                <a href="companies/INOD.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    INOD
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">INOD</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">段永平</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">核心底仓高位锁定</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/INOD_scoring.html" 
+                   title="点击查看【INOD】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-sell">
+                  NO_CHANGE
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">23</td>
+              <td class="py-3 font-sans">
+                <a href="companies/KSPI.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    KSPI
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">KSPI</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">莫尼斯帕布莱</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">莫尼斯帕布莱新建底仓</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/KSPI_scoring.html" 
+                   title="点击查看【KSPI】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
+                  NEW
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">24</td>
+              <td class="py-3 font-sans">
+                <a href="companies/MA.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    MA
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">MA</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">特里史密斯</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">特里史密斯新建底仓</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/MA_scoring.html" 
+                   title="点击查看【MA】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
+                  NEW
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">25</td>
+              <td class="py-3 font-sans">
+                <a href="companies/NVDA.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    NVDA
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">英伟达 (NVIDIA Corp.)</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">段永平</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">段永平连续2季建仓</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/NVDA_scoring.html" 
+                   title="点击查看【英伟达 (NVIDIA Corp.)】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-sell">
+                  REDUCE
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">26</td>
+              <td class="py-3 font-sans">
+                <a href="companies/NXT.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    NXT
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">NXT</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">特里史密斯</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">特里史密斯新建底仓</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/NXT_scoring.html" 
+                   title="点击查看【NXT】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
+                  NEW
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">27</td>
+              <td class="py-3 font-sans">
+                <a href="companies/ORLY.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    ORLY
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">ORLY</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">特里史密斯</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">特里史密斯新建底仓</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/ORLY_scoring.html" 
+                   title="点击查看【ORLY】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
+                  NEW
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">28</td>
+              <td class="py-3 font-sans">
+                <a href="companies/PLTR.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    PLTR
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">PLTR</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">段永平</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">核心底仓高位锁定</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/PLTR_scoring.html" 
+                   title="点击查看【PLTR】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-sell">
+                  NO_CHANGE
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">29</td>
+              <td class="py-3 font-sans">
+                <a href="companies/SNOW.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    SNOW
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">SNOW</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">段永平</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">核心底仓高位锁定</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/SNOW_scoring.html" 
+                   title="点击查看【SNOW】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-sell">
+                  NO_CHANGE
+                </span>
+              </td>
+            </tr>
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 text-gray-500">30</td>
+              <td class="py-3 font-sans">
+                <a href="companies/SNPS.html" class="group block hover:text-emerald-400 transition-colors">
+                  <span class="font-bold text-white group-hover:text-emerald-400 font-mono text-sm underline decoration-emerald-500/40 underline-offset-2 flex items-center gap-1">
+                    SNPS
+                    <span class="text-[10px] text-gray-500 group-hover:text-emerald-400 no-underline">↗</span>
+                  </span>
+                  <span class="block text-gray-400 group-hover:text-gray-300 text-[11px] truncate max-w-[180px]">SNPS</span>
+                </a>
+              </td>
+              <td class="py-3 font-sans text-gray-300 font-medium">段永平</td>
+              <td class="py-3 font-sans text-xs text-blue-300">
+                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">核心底仓高位锁定</span>
+              </td>
+              <td class="py-3 text-center">
+                <a href="companies/SNPS_scoring.html" 
+                   title="点击查看【SNPS】决心分算法模型与详细推导拆解 ↗"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono text-sm transition-all duration-150 group shadow-sm hover:shadow-emerald-500/20">
+                  <span>3.0</span>
+                  <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
+                </a>
+              </td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-sell">
+                  NO_CHANGE
                 </span>
               </td>
             </tr>
