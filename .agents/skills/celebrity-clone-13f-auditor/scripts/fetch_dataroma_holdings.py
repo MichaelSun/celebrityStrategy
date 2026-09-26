@@ -165,9 +165,10 @@ def _import_phase2_modules():
     except Exception:
         pass
     try:
-        from generate_html_dashboard import generate_html, load_dashboard_data
+        from generate_html_dashboard import generate_html, load_dashboard_data, generate_all_company_pages
         mod["generate_html"] = generate_html
         mod["load_dashboard_data"] = load_dashboard_data
+        mod["generate_all_company_pages"] = generate_all_company_pages
     except Exception:
         pass
     return mod
@@ -1098,6 +1099,9 @@ def main():
             os.makedirs(os.path.dirname(docs_path), exist_ok=True)
             with open(docs_path, "w", encoding="utf-8") as f:
                 f.write(html_code)
+            if "generate_all_company_pages" in p2:
+                p2["generate_all_company_pages"](db_path, os.path.join(out_dir, "companies"))
+                p2["generate_all_company_pages"](db_path, os.path.join(PROJECT_ROOT, "docs", "companies"))
             print(f"  ✅ Interactive HTML Dashboard saved: {dash_path}")
             print(f"  ✅ Web deployment asset saved: {docs_path}")
         except Exception as e:
@@ -1120,6 +1124,15 @@ def main():
                 target_dash = os.path.join(obsidian_dir, "celebrity_strategy_dashboard.html")
                 shutil.copy2(dash_path, target_dash)
                 print(f"     -> {target_dash}")
+                # Sync companies folder to Obsidian
+                comp_dir = os.path.join(out_dir, "companies")
+                if os.path.exists(comp_dir):
+                    target_comp_dir = os.path.join(obsidian_dir, "companies")
+                    os.makedirs(target_comp_dir, exist_ok=True)
+                    for cf in os.listdir(comp_dir):
+                        if cf.endswith(".html"):
+                            shutil.copy2(os.path.join(comp_dir, cf), os.path.join(target_comp_dir, cf))
+                    print(f"     -> Synced company pages to: {target_comp_dir}")
         except Exception as e:
             print(f"  ⚠️ Obsidian sync notice: {e}")
 

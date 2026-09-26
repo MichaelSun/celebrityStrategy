@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FedEx Corp. (FDX) - 独立公司研究档案 | CelebrityStrategy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .terminal-card {
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid rgba(55, 65, 81, 0.6);
+      backdrop-filter: blur(12px);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+    }
+  </style>
+  <script>
+    function returnToDashboard(e) {
+      if (e) e.preventDefault();
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        if (window.location.pathname.includes('/docs/')) {
+          window.location.href = '../index.html';
+        } else if (window.location.pathname.includes('celebrity_strategy_dashboard')) {
+          window.location.href = '../celebrity_strategy_dashboard.html';
+        } else {
+          window.location.href = '../dashboard.html';
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen p-4 md:p-6 lg:p-8 antialiased selection:bg-emerald-500 selection:text-white">
+
+  <!-- ── Top Navigation Bar ────────────────────────────────────────── -->
+  <header class="max-w-5xl mx-auto mb-8 flex items-center justify-between border-b border-gray-800 pb-4">
+    <div class="flex items-center gap-3">
+      <a href="../dashboard.html" onclick="returnToDashboard(event)" class="px-3.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white transition-all text-xs font-semibold flex items-center gap-1.5 border border-gray-700">
+        <span>←</span>
+        <span>返回大盘</span>
+      </a>
+      <div class="text-xs text-gray-500 font-mono hidden sm:block">
+        CelebrityStrategy / 独立公司档案 / <span class="text-gray-300 font-semibold">FDX</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-xs font-mono">
+      <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="text-gray-400">组件状态:</span>
+      <span class="text-emerald-400">独立页面预留 · 待填充</span>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto space-y-6">
+
+    <!-- ── Main Company Hero Banner (只显示这个公司的名字和基础标牌) ───────────── -->
+    <div class="terminal-card rounded-2xl p-6 md:p-8 border-l-4 border-l-emerald-500 glow-emerald">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2.5 mb-2">
+            <span class="font-mono text-sm px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">FDX</span>
+            
+            <span class="text-xs px-2.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-sans">跟踪大师: 梅森·霍金斯 (Mason Hawkins)</span>
+          </div>
+          <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">FedEx Corp.</h1>
+          <p class="text-xs md:text-sm text-gray-400 mt-1">
+            独立公司专属档案 · 13F/13G 机构持仓追踪与价值投资深度研究空间
+          </p>
+          
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="../dashboard.html" onclick="returnToDashboard(event)" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold text-xs transition-colors shadow-lg shadow-emerald-500/20 flex items-center gap-1.5">
+            <span>← 返回大盘</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Empty Page Component / Placeholder Slots ──────────────────────── -->
+    <div class="terminal-card rounded-2xl p-6 md:p-8 border border-gray-800">
+      <div class="text-center py-6 border-b border-gray-800/80 mb-8">
+        <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-2xl">
+          🏢
+        </div>
+        <h2 class="text-xl font-bold text-white mb-1">FedEx Corp.</h2>
+        <p class="text-xs font-mono text-emerald-400">FDX · 独立专题页面</p>
+        <p class="text-xs text-gray-400 mt-3 max-w-lg mx-auto leading-relaxed">
+          当前页面为 <strong>FedEx Corp.</strong> 的专属独立页面组件骨架。已完成全系统链接映射与路由打通，后续可在此组件内直接装配深度财务数据与调研图谱。
+        </p>
+      </div>
+
+      <!-- 4 Planned Modular Components Placeholder Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Component 1 -->
+        <div class="p-5 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-white text-sm flex items-center gap-1.5">
+                <span>📊</span> 13F 大师持仓变动与持股轨迹
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">预留组件</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">
+              追踪各季度顶级机构增减仓、买入申报成本均价、持股市值占比及同行共振演进。
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-gray-800/60 text-[11px] text-gray-500 font-mono">
+            Status: 待接入持仓历史流
+          </div>
+        </div>
+
+        <!-- Component 2 -->
+        <div class="p-5 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-white text-sm flex items-center gap-1.5">
+                <span>🔬</span> CFO 财务法医与财务排雷
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">预留组件</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">
+              深度财务体检：应收账款周转异动、经营现金流与净利润背离检测、自由现金流成色与商誉减值压力。
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-gray-800/60 text-[11px] text-gray-500 font-mono">
+            Status: 待接入 cfo-check 排雷流水线
+          </div>
+        </div>
+
+        <!-- Component 3 -->
+        <div class="p-5 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-white text-sm flex items-center gap-1.5">
+                <span>🎯</span> 估值击球区与安全边际
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">预留组件</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">
+              测算现价与大师进场成本折价幅度、历史 PE/PB Band 百分位、FCF Yield 现金收益率击球区。
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-gray-800/60 text-[11px] text-gray-500 font-mono">
+            Status: 待接入估值模型组件
+          </div>
+        </div>
+
+        <!-- Component 4 -->
+        <div class="p-5 rounded-xl border border-dashed border-gray-700 bg-gray-900/40 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-white text-sm flex items-center gap-1.5">
+                <span>💡</span> 商业模式与护城河备忘录
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">预留组件</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">
+              沉淀该标的的核心竞争壁垒、高管治理风格、年报关键线索与大师投资论文研报。
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-gray-800/60 text-[11px] text-gray-500 font-mono">
+            Status: 待接入研究笔记模版
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="max-w-5xl mx-auto mt-12 pt-6 border-t border-gray-800 text-center text-xs text-gray-500">
+    CelebrityStrategy · 独立公司研究档案组件 · FedEx Corp. (FDX)
+  </footer>
+
+</body>
+</html>
