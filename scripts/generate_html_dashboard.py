@@ -156,8 +156,11 @@ def generate_html(data: dict) -> str:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🏛️ CelebrityStrategy 聪明钱价值投资雷达</title>
-  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <meta name="description" content="CelebrityStrategy - 顶级价值投资机构 13F & 13G 变动审计 · 多季度决心积分 · 成本优势击球区雷达">
+  <meta property="og:title" content="🏛️ CelebrityStrategy 聪明钱价值投资雷达">
+  <meta property="og:description" content="跟踪李录、段永平、巴菲特等顶级价值大师多季度持仓、击破13F滞后性、离岸港A股资产与成本击球区。">
+  <meta property="og:type" content="website">
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {{
       background-color: #0b0f19;
@@ -730,6 +733,13 @@ def main():
     with open(local_output, "w", encoding="utf-8") as f:
         f.write(html_content)
     print(f"  ✅ Dashboard saved locally: {local_output}")
+
+    # 2. Save to docs/index.html (GitHub Pages & Cloudflare Pages standard root)
+    docs_output = os.path.join(PROJECT_ROOT, "docs", "index.html")
+    os.makedirs(os.path.dirname(docs_output), exist_ok=True)
+    with open(docs_output, "w", encoding="utf-8") as f:
+        f.write(html_content)
+    print(f"  ✅ Web deployment asset saved: {docs_output}")
 
     # 2. Save to Artifact Directory for conversation display
     artifact_path = os.path.join(ARTIFACT_DIR, "dashboard.html")

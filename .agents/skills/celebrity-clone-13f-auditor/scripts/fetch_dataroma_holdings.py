@@ -1094,7 +1094,12 @@ def main():
             dash_path = os.path.join(out_dir, "dashboard.html")
             with open(dash_path, "w", encoding="utf-8") as f:
                 f.write(html_code)
+            docs_path = os.path.join(PROJECT_ROOT, "docs", "index.html")
+            os.makedirs(os.path.dirname(docs_path), exist_ok=True)
+            with open(docs_path, "w", encoding="utf-8") as f:
+                f.write(html_code)
             print(f"  ✅ Interactive HTML Dashboard saved: {dash_path}")
+            print(f"  ✅ Web deployment asset saved: {docs_path}")
         except Exception as e:
             print(f"  ⚠️ HTML dashboard notice: {e}")
 
