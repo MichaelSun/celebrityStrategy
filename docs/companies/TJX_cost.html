@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Companies Inc. (TJX) 持仓成本拆解与均价推导明细 | CelebrityStrategy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .terminal-card {
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid rgba(55, 65, 81, 0.6);
+      backdrop-filter: blur(12px);
+    }
+    .glow-blue {
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+    }
+    .badge-buy {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .badge-sell {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .badge-hold {
+      background-color: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+  </style>
+  <script>
+    function returnToDashboard(e) {
+      if (e) e.preventDefault();
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        if (window.location.pathname.includes('/docs/')) {
+          window.location.href = '../index.html#tab-discounts';
+        } else if (window.location.pathname.includes('celebrity_strategy_dashboard')) {
+          window.location.href = '../celebrity_strategy_dashboard.html#tab-discounts';
+        } else {
+          window.location.href = '../dashboard.html#tab-discounts';
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen p-4 md:p-6 lg:p-8 antialiased selection:bg-blue-500 selection:text-white">
+
+  <!-- ── Top Header Navigation Bar ────────────────────────────────────────── -->
+  <header class="max-w-5xl mx-auto mb-8 flex items-center justify-between border-b border-gray-800 pb-4">
+    <div class="flex items-center gap-3">
+      <a href="../dashboard.html#tab-discounts" onclick="returnToDashboard(event)" class="px-3.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white transition-all text-xs font-semibold flex items-center gap-1.5 border border-gray-700">
+        <span>←</span>
+        <span>返回持仓成本矩阵</span>
+      </a>
+      <div class="text-xs text-gray-500 font-mono hidden sm:block">
+        CelebrityStrategy / 持仓成本与击球区 / <span class="text-gray-300 font-semibold">TJX 均价拆解</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-xs font-mono">
+      <span class="inline-block w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+      <span class="text-gray-400">成本算法模型:</span>
+      <span class="text-blue-400 font-bold">资本加权核算</span>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto space-y-6">
+
+    <!-- ── Hero Banner: Cost & Margin Summary ─────────────────────────────── -->
+    <div class="terminal-card rounded-2xl p-6 md:p-8 border-l-4 border-l-blue-500 glow-blue">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <div class="flex items-center gap-2.5 mb-2">
+            <span class="font-mono text-sm px-2.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold">TJX</span>
+            <span class="text-xs px-2.5 py-0.5 rounded bg-gray-800 text-gray-300 border border-gray-700 font-sans">Other</span>
+            <span class="text-xs px-2.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-sans">1 家机构重仓</span>
+          </div>
+          <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Companies Inc.</h1>
+          <div class="mt-3 flex items-center gap-2 text-xs text-gray-300">
+            <span class="text-gray-400">击球区建议：</span>
+            <span class="font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded">⚪ 待更新最新行情</span>
+          </div>
+        </div>
+
+        <!-- 4-Block Quick Stats Grid -->
+        <div class="grid grid-cols-2 gap-3 sm:gap-4 shrink-0 text-right font-mono">
+          <div class="p-3 rounded-xl bg-gray-900/80 border border-blue-500/30 text-left">
+            <div class="text-[10px] text-gray-400 uppercase tracking-wider">机构加权申报均价</div>
+            <div class="text-xl md:text-2xl font-black text-blue-400 mt-0.5">
+              $151.50
+            </div>
+            <div class="text-[10px] text-gray-500 mt-0.5">资金规模加权成本</div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-gray-900/80 border border-gray-800 text-left">
+            <div class="text-[10px] text-gray-400 uppercase tracking-wider">简单算术均价</div>
+            <div class="text-xl md:text-2xl font-black text-gray-300 mt-0.5">
+              $151.50
+            </div>
+            <div class="text-[10px] text-gray-500 mt-0.5">各机构同权均值</div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-gray-900/80 border border-gray-800 text-left">
+            <div class="text-[10px] text-gray-400 uppercase tracking-wider">当前市场现价</div>
+            <div class="text-xl md:text-2xl font-black text-white mt-0.5">
+              待更新
+            </div>
+            <div class="text-[10px] text-gray-500 mt-0.5">最新市场交易价格</div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-gray-900/80 border border-emerald-500/30 text-left">
+            <div class="text-[10px] text-gray-400 uppercase tracking-wider">相对成本差价 (Delta)</div>
+            <div class="text-xl md:text-2xl font-black mt-0.5 text-gray-400">
+              待估值
+            </div>
+            <div class="text-[10px] text-gray-500 mt-0.5">
+              平价/待定
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Card 1: 🏛️ 大师独立持仓成本与持股明细清单 ── -->
+    <div class="terminal-card rounded-2xl p-6 md:p-8 border border-gray-800">
+      <div class="border-b border-gray-800 pb-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div>
+          <h2 class="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+            <span>🏛️</span> 【Companies Inc.】大师独立持仓明细拆解
+          </h2>
+          <p class="text-xs text-gray-400 mt-0.5">每位跟踪大师对该标的的真实申报持股数量、买入成本与持仓市值</p>
+        </div>
+        <div class="text-xs font-mono text-gray-400">
+          合计持股: <span class="text-white font-bold">2,272,592 股</span>
+        </div>
+      </div>
+
+      <!-- Institutional Holdings Table -->
+      <div class="overflow-x-auto mb-4">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-gray-800 text-gray-400 uppercase text-[11px] tracking-wider font-mono">
+              <th class="pb-3 font-medium">投资大师机构 (Guru)</th>
+              <th class="pb-3 font-medium text-center">报告期</th>
+              <th class="pb-3 font-medium text-right text-blue-400">申报买入均价</th>
+              <th class="pb-3 font-medium text-right">持仓股数</th>
+              <th class="pb-3 font-medium text-right">持仓总市值</th>
+              <th class="pb-3 font-medium text-center">持仓占比</th>
+              <th class="pb-3 font-medium text-right">季度动作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-800/60 font-mono">
+            
+            <tr class="hover:bg-gray-800/40 transition-colors">
+              <td class="py-3 font-sans text-white font-medium">
+                特里·史密斯 (Terry Smith)
+                <span class="text-[10px] ml-1.5 px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">Tier 2</span>
+              </td>
+              <td class="py-3 text-center text-gray-400 font-mono">Q2 2026</td>
+              <td class="py-3 text-right font-mono font-bold text-blue-400">$151.50</td>
+              <td class="py-3 text-right font-mono text-gray-200">2,272,592 股</td>
+              <td class="py-3 text-right font-mono text-gray-200">$344,298,000.00</td>
+              <td class="py-3 text-center font-mono font-bold text-white">2.52%</td>
+              <td class="py-3 text-right">
+                <span class="px-2 py-0.5 rounded text-[11px] badge-buy">
+                  Buy
+                </span>
+              </td>
+            </tr>
+            
+          </tbody>
+          <tfoot>
+            <tr class="border-t-2 border-gray-700 bg-gray-900/80 font-mono font-bold text-xs">
+              <td class="py-3 text-white">合计加权统计 (Active Totals)</td>
+              <td class="py-3 text-center text-gray-400">1 家机构</td>
+              <td class="py-3 text-right text-blue-400">$151.50 (加权均价)</td>
+              <td class="py-3 text-right text-white">2,272,592 股</td>
+              <td class="py-3 text-right text-emerald-400">$344,298,000.00</td>
+              <td class="py-3 text-center text-gray-400">—</td>
+              <td class="py-3 text-right text-emerald-400">合算均价</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Card 2: 🧮 均价计算推导流程与数学步骤 ── -->
+    <div class="terminal-card rounded-2xl p-6 md:p-8 border border-gray-800">
+      <div class="border-b border-gray-800 pb-4 mb-6">
+        <h2 class="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+          <span>🧮</span> 均价计算公式与详细推导流水线
+        </h2>
+        <p class="text-xs text-gray-400 mt-0.5">从 13F 原始申报到资本加权均价与击球区差价率的完整数学推导过程</p>
+      </div>
+
+      <div class="space-y-4 text-xs font-sans leading-relaxed text-gray-300">
+        <!-- Step 1 -->
+        <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
+          <div class="font-bold text-white mb-1.5 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 inline-flex items-center justify-center font-mono text-xs">1</span>
+            <span>13F 申报数据归集与机构持股拆解</span>
+          </div>
+          <p class="text-gray-400">
+            从 SEC EDGAR 官方备案及 Dataroma 审计数据中提取最新报告期内各投资大师对 <code>TJX</code> 的真实建仓/持仓记录：
+          </p>
+          <ul class="mt-2 space-y-1 text-gray-300 font-mono text-[11px]">
+            <li>• <strong>特里·史密斯 (Terry Smith)</strong>: 持股 <code>2,272,592 股</code>，13F 申报价格 <code>$151.50</code>，持仓市值 <code>$344,298,000.00</code> (占比 2.52%)</li>
+          </ul>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="p-4 rounded-xl bg-gray-900/60 border border-blue-500/30">
+          <div class="font-bold text-white mb-1.5 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 inline-flex items-center justify-center font-mono text-xs">2</span>
+            <span>机构资本加权申报均价 (Weighted Average Cost) 公式与推导</span>
+          </div>
+          <p class="text-gray-400">
+            资本加权均价以各家机构的真实持股数量为权重，能够最真实反映“华尔街聪明钱整体的加权建仓底牌成本”：
+          </p>
+          <div class="my-3 p-3 rounded-lg bg-gray-950 font-mono text-xs text-blue-400 border border-gray-800">
+            加权申报均价 = ∑ (每位大师持股数 × 申报价格) ÷ ∑ (每位大师持股数) = 机构持仓总市值 ÷ 机构持股总股数
+          </div>
+          <div class="space-y-1.5 font-mono text-[11px] text-gray-300">
+            <div>• <strong>分子 (持仓总市值)</strong> = 特里·史密斯: $344,298,000.00 = <span class="text-emerald-400 font-bold">$344,298,000.00</span></div>
+            <div>• <strong>分母 (持股总股数)</strong> = 特里·史密斯: 2,272,592 股 = <span class="text-white font-bold">2,272,592 股</span></div>
+            <div>• <strong>加权计算结果</strong> = $344,298,000.00 ÷ 2,272,592 股 = <span class="text-blue-400 font-bold text-sm">$151.50</span></div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
+          <div class="font-bold text-white mb-1.5 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 inline-flex items-center justify-center font-mono text-xs">3</span>
+            <span>简单算术均价 (Simple Mean) 对比与实战解析</span>
+          </div>
+          <div class="font-mono text-xs text-purple-400 my-2 p-2.5 rounded bg-gray-950 border border-gray-800">
+            简单算术均价 = ∑ (各机构申报价格) ÷ 机构总数 = ($151.50) ÷ 1 = $151.50
+          </div>
+          <p class="text-gray-400 text-[11px] leading-relaxed">
+            💡 <strong>为什么我们优先采用【加权均价】而非【简单算术均价】？</strong><br>
+            因为不同大师的持仓规模往往存在数十倍至数百倍的巨大差距。若某大师只用 1,000 万美元试仓，而另一大师重仓 20 亿美元，简单算术均价会过度放大轻仓者的试水价格，无法反映主流大资金的真实重仓成本中枢。加权均价体现了真实资本的筹码底牌。
+          </p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="p-4 rounded-xl bg-gray-900/60 border border-emerald-500/30">
+          <div class="font-bold text-white mb-1.5 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 inline-flex items-center justify-center font-mono text-xs">4</span>
+            <span>现价与均价击球区差价率 (Margin of Safety / Premium) 测算</span>
+          </div>
+          <div class="my-3 p-3 rounded-lg bg-gray-950 font-mono text-xs text-emerald-400 border border-gray-800">
+            差价率 (Delta %) = [ (当前市场现价 - 机构加权成本) ÷ 机构加权成本 ] × 100%
+          </div>
+          <div class="space-y-1.5 font-mono text-[11px] text-gray-300">
+            <div>• 当前市场最新现价: <span class="text-white font-bold">暂无行情 (待更新)</span></div>
+            <div>• 机构加权申报成本: <span class="text-blue-400 font-bold">$151.50</span></div>
+            <div>• 差价计算结果: <span class="font-bold text-sm text-gray-400">待估值</span></div>
+          </div>
+          <div class="mt-3 p-3 rounded-lg bg-gray-950/70 border border-gray-800 text-[11px] text-gray-300">
+            📌 <strong>价值投资实操指引：</strong> 该标的最新行情正在估值同步队列中，申报成本数据已精确核算完毕。可参考 13F 申报均价作为基本面建仓锚点。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Footer Action Navigation ──────────────────────────────────────── -->
+    <div class="flex items-center justify-between pt-4">
+      <a href="../dashboard.html#tab-discounts" onclick="returnToDashboard(event)" class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors border border-gray-700">
+        <span>← 返回持仓成本矩阵</span>
+      </a>
+      <div class="flex items-center gap-3">
+        <a href="TJX_scoring.html" class="px-3.5 py-2 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 hover:text-purple-300 border border-purple-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+          <span>🏆 查看决心分算法 →</span>
+        </a>
+        <a href="TJX.html" class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-gray-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-lg shadow-blue-500/20">
+          <span>🏢 查看 Companies Inc. 独立公司档案 →</span>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="max-w-5xl mx-auto mt-12 pt-6 border-t border-gray-800 text-center text-xs text-gray-500">
+    CelebrityStrategy · 机构加权持仓成本与击球区数学模型 · Companies Inc. (TJX)
+  </footer>
+
+</body>
+</html>

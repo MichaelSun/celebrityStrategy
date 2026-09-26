@@ -13,10 +13,13 @@ import unittest
 from scripts.generate_html_dashboard import (
     aggregate_conviction_scores,
     build_company_catalog,
+    build_cost_matrix,
     clean_company_name,
     generate_all_company_pages,
+    generate_all_cost_pages,
     generate_all_scoring_pages,
     generate_company_html,
+    generate_cost_detail_html,
     generate_html,
     generate_scoring_detail_html,
     load_dashboard_data,
@@ -53,7 +56,8 @@ class TestDashboardAndCompanyPages(unittest.TestCase):
         self.assertIn("返回大盘", html)
         self.assertIn("13F 大师持仓变动与持股轨迹", html)
         self.assertIn("CFO 财务法医与财务排雷", html)
-        self.assertIn("估值击球区与安全边际", html)
+        self.assertIn("估值击球区与持仓成本拆解", html)
+        self.assertIn("TME_cost.html", html)
         self.assertIn("商业模式与护城河备忘录", html)
 
     def test_generate_all_company_pages_in_temp_dir(self):
@@ -144,6 +148,113 @@ class TestDashboardAndCompanyPages(unittest.TestCase):
         duplicates = [t for t, count in counter.items() if count > 1]
         self.assertEqual(duplicates, [])
 
+        # Requirement 5: Cost matrix links to {ticker}_cost.html and contains pagination
+        self.assertIn('href="companies/DHI_cost.html"', html)
+        self.assertIn('id="tab-discounts"', html)
+        self.assertIn('id="costPageNumbers"', html)
+        self.assertIn('id="btnCostPrev"', html)
+        self.assertIn('id="btnCostNext"', html)
+        self.assertIn('filterCostTable', html)
+        self.assertIn('renderCostTable', html)
+
+    def test_build_cost_matrix_multi_guru_and_discount_premium(self):
+        """Test build_cost_matrix calculations: capital-weighted price, individual breakdown, discount/premium."""
+        holdings = [
+            # PDD held by 2 gurus
+            {"ticker": "PDD", "company_name": "PDD Holdings", "guru_code": "HC", "guru_name": "李录 (Li Lu)", "tier": 1, "shares_held": 1000000, "reported_price": 70.0, "portfolio_weight": 20.0, "activity": "Add 10%", "quarter": "Q2 2026"},
+            {"ticker": "PDD", "company_name": "PDD Holdings", "guru_code": "HH", "guru_name": "段永平 (Duan Yongping)", "tier": 1, "shares_held": 3000000, "reported_price": 90.0, "portfolio_weight": 10.0, "activity": "Add 5%", "quarter": "Q2 2026"},
+            # DHI held by 1 guru (discount)
+            {"ticker": "DHI", "company_name": "D.R. Horton", "guru_code": "BRK", "guru_name": "沃伦·巴菲特", "tier": 1, "shares_held": 5000, "reported_price": 160.0, "portfolio_weight": 0.5, "activity": "Buy", "quarter": "Q2 2026"},
+            # AAPL held by 1 guru (premium)
+            {"ticker": "AAPL", "company_name": "Apple", "guru_code": "BRK", "guru_name": "沃伦·巴菲特", "tier": 1, "shares_held": 10000000, "reported_price": 250.0, "portfolio_weight": 30.0, "activity": "Hold", "quarter": "Q2 2026"},
+            # Exited position
+            {"ticker": "AAPL", "company_name": "Apple", "guru_code": "HC", "guru_name": "李录", "tier": 1, "shares_held": 0, "reported_price": 0.0, "portfolio_weight": 0.0, "activity": "Sell 100.00%", "quarter": "Q2 2026"},
+        ]
+        valuations = {
+            "PDD": {"current_price": 85.0, "sector": "Consumer Cyclical", "pe_ttm": 12.0, "fcf_yield": 8.5},
+            "DHI": {"current_price": 140.0, "sector": "Real Estate", "pe_ttm": 10.5, "fcf_yield": 6.0},  # 140 < 160 (discount)
+            "AAPL": {"current_price": 300.0, "sector": "Technology", "pe_ttm": 32.0, "fcf_yield": 3.0},   # 300 > 250 (premium)
+        }
+
+        matrix = build_cost_matrix(holdings, valuations)
+        matrix_by_ticker = {m["ticker"]: m for m in matrix}
+
+        # Check PDD:
+        # Total shares = 1M + 3M = 4M
+        # Total value = 1M*70 + 3M*90 = 70M + 270M = 340M
+        # Weighted cost = 340M / 4M = 85.0
+        pdd = matrix_by_ticker["PDD"]
+        self.assertEqual(pdd["total_shares"], 4000000)
+        self.assertEqual(pdd["weighted_cost"], 85.0)
+        self.assertEqual(pdd["simple_cost"], 80.0)  # (70 + 90) / 2
+        self.assertEqual(pdd["diff_pct"], 0.0)      # current 85.0 vs cost 85.0
+        self.assertEqual(len(pdd["gurus_detail"]), 2)
+
+        # Check DHI: discount
+        dhi = matrix_by_ticker["DHI"]
+        self.assertEqual(dhi["weighted_cost"], 160.0)
+        self.assertEqual(dhi["status_category"], "discount")
+        self.assertLess(dhi["diff_pct"], 0.0)
+
+        # Check AAPL: premium and exited guru handled
+        aapl = matrix_by_ticker["AAPL"]
+        self.assertEqual(aapl["weighted_cost"], 250.0)
+        self.assertEqual(aapl["status_category"], "premium")
+        self.assertGreater(aapl["diff_pct"], 0.0)
+        self.assertEqual(len(aapl["gurus_detail"]), 2)
+        exited = [g for g in aapl["gurus_detail"] if g["is_exited"]]
+        self.assertEqual(len(exited), 1)
+        self.assertEqual(exited[0]["guru_code"], "HC")
+
+    def test_generate_cost_detail_html(self):
+        """Test generating dedicated cost breakdown page for a company."""
+        item = {
+            "ticker": "PDD",
+            "company_name": "拼多多 (PDD Holdings Inc.)",
+            "sector": "Consumer Cyclical",
+            "total_shares": 4000000,
+            "total_value": 340000000.0,
+            "weighted_cost": 85.0,
+            "simple_cost": 80.0,
+            "current_price": 76.5,  # 10% discount
+            "diff_pct": -10.0,
+            "pe_ttm": 12.0,
+            "fcf_yield": 9.2,
+            "status_category": "discount",
+            "guidance": "🟢 黄金击球区 (高安全边际)",
+            "gurus_detail": [
+                {"guru_name": "李录 (Li Lu)", "guru_code": "HC", "tier": 1, "shares_held": 1000000, "reported_price": 70.0, "position_value": 70000000.0, "portfolio_weight": 20.0, "activity": "Add 10%", "quarter": "Q2 2026", "is_exited": False},
+                {"guru_name": "段永平 (Duan Yongping)", "guru_code": "HH", "tier": 1, "shares_held": 3000000, "reported_price": 90.0, "position_value": 270000000.0, "portfolio_weight": 10.0, "activity": "Add 5%", "quarter": "Q2 2026", "is_exited": False},
+            ]
+        }
+        catalog_meta = {"name": "拼多多 (PDD Holdings Inc.)"}
+        html = generate_cost_detail_html(item, catalog_meta)
+
+        # Core assertions
+        self.assertIn("拼多多 (PDD Holdings Inc.)", html)
+        self.assertIn("$85.00", html)   # Weighted cost
+        self.assertIn("$80.00", html)   # Simple cost
+        self.assertIn("$76.50", html)   # Current price
+        self.assertIn("-10.0%", html)   # Delta
+        self.assertIn("加权申报均价", html)
+        self.assertIn("李录", html)
+        self.assertIn("段永平", html)
+        self.assertIn("返回持仓成本矩阵", html)
+        self.assertIn("PDD.html", html)
+
+    def test_generate_all_cost_pages_in_temp_dir(self):
+        """Test generating all cost pages into a directory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            data = load_dashboard_data(DB_PATH)
+            catalog = build_company_catalog(DB_PATH)
+            cost_matrix = build_cost_matrix(data["holdings"], data["valuations"])
+            count = generate_all_cost_pages(cost_matrix, catalog, tmpdir)
+            self.assertGreater(count, 200)
+            self.assertTrue(os.path.exists(os.path.join(tmpdir, "PDD_cost.html")))
+            self.assertTrue(os.path.exists(os.path.join(tmpdir, "AAPL_cost.html")))
+            self.assertTrue(os.path.exists(os.path.join(tmpdir, "DHI_cost.html")))
+
 
 if __name__ == "__main__":
     unittest.main()
+
