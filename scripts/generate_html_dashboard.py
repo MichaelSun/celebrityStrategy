@@ -1948,89 +1948,91 @@ def generate_html(data: dict) -> str:
       </div>
     </section>
 
-    <!-- ── Visual Charts Grid: Sweet Spot Matrix & Grand Consensus ───────── -->
-    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- ── Visual Charts: Sweet Spot Matrix (Full-Width) ──────────────── -->
+    <section class="w-full">
       
-      <!-- Chart 1: The Sweet Spot Matrix (Interactive SVG Scatter) -->
-      <div class="lg:col-span-7 terminal-card rounded-xl p-5 flex flex-col justify-between">
+      <!-- The Sweet Spot Matrix (Interactive SVG Scatter) -->
+      <div class="terminal-card rounded-xl p-5 md:p-6 flex flex-col justify-between w-full">
         <div>
           <!-- Header & Controls -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
             <div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2.5">
                 <h2 class="text-base sm:text-lg font-semibold text-white flex items-center gap-2">
                   🎯 聪明钱“击球区”矩阵（The Sweet Spot Matrix）
                 </h2>
-                <span id="scatterCountBadge" class="text-[11px] px-2 py-0.5 bg-gray-800 text-gray-300 border border-gray-700 rounded font-mono">
+                <span id="scatterCountBadge" class="text-[11px] px-2.5 py-0.5 bg-gray-800 text-gray-300 border border-gray-700 rounded-full font-mono">
                   显示 {core_scatter_count} / {all_scatter_count}
                 </span>
               </div>
-              <p class="text-xs text-gray-400 mt-0.5">
+              <p class="text-xs text-gray-400 mt-1">
                 X 轴: 相对建仓成本溢价 (负数越左越便宜) ｜ Y 轴: 自由现金流收益率 (FCF Yield) ↑
               </p>
             </div>
             
-            <!-- Quick Search Input -->
-            <div class="relative">
-              <input type="text" id="scatterSearch" placeholder="🔍 快速定位标的 (如 PDD, AAPL)..." 
-                class="text-xs bg-gray-950/80 border border-gray-700/80 rounded-lg px-2.5 py-1.5 pr-7 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 w-full sm:w-48 transition-all"
-                oninput="onScatterSearch(this.value)" />
-              <button id="scatterSearchClear" onclick="clearScatterSearch()" class="hidden absolute right-2.5 top-1.5 text-xs text-gray-400 hover:text-white">✕</button>
+            <!-- Controls: Filter Pills & Search in one responsive bar -->
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center gap-1.5 flex-wrap text-xs" id="scatterFilterPills">
+                <button onclick="setScatterFilter('core')" id="sbtn-core" class="scatter-pill px-2.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-medium transition-all shadow-sm">
+                  🔥 核心重仓 (Top {core_scatter_count})
+                </button>
+                <button onclick="setScatterFilter('golden')" id="sbtn-golden" class="scatter-pill px-2.5 py-1.5 rounded-lg bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
+                  🟢 黄金击球区 ({golden_scatter_count})
+                </button>
+                <button onclick="setScatterFilter('brk')" id="sbtn-brk" class="scatter-pill px-2.5 py-1.5 rounded-lg bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
+                  👑 沃伦·巴菲特 ({brk_scatter_count})
+                </button>
+                <button onclick="setScatterFilter('duan_li')" id="sbtn-duan_li" class="scatter-pill px-2.5 py-1.5 rounded-lg bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
+                  🎯 李录 & 段永平 ({duan_li_scatter_count})
+                </button>
+                <button onclick="setScatterFilter('all')" id="sbtn-all" class="scatter-pill px-2.5 py-1.5 rounded-lg bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
+                  🌐 全量标的 ({all_scatter_count})
+                </button>
+              </div>
+
+              <!-- Quick Search Input -->
+              <div class="relative">
+                <input type="text" id="scatterSearch" placeholder="🔍 快速定位标的 (如 PDD, AAPL)..." 
+                  class="text-xs bg-gray-950/80 border border-gray-700/80 rounded-lg px-2.5 py-1.5 pr-7 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 w-44 sm:w-48 transition-all"
+                  oninput="onScatterSearch(this.value)" />
+                <button id="scatterSearchClear" onclick="clearScatterSearch()" class="hidden absolute right-2.5 top-1.5 text-xs text-gray-400 hover:text-white">✕</button>
+              </div>
             </div>
           </div>
 
-          <!-- Filter Pills Toolbar -->
-          <div class="flex items-center gap-1.5 flex-wrap mb-3 text-xs" id="scatterFilterPills">
-            <button onclick="setScatterFilter('core')" id="sbtn-core" class="scatter-pill px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-medium transition-all shadow-sm">
-              🔥 核心重仓 (Top {core_scatter_count})
-            </button>
-            <button onclick="setScatterFilter('golden')" id="sbtn-golden" class="scatter-pill px-2.5 py-1 rounded-md bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
-              🟢 黄金击球区 ({golden_scatter_count})
-            </button>
-            <button onclick="setScatterFilter('brk')" id="sbtn-brk" class="scatter-pill px-2.5 py-1 rounded-md bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
-              👑 沃伦·巴菲特 ({brk_scatter_count})
-            </button>
-            <button onclick="setScatterFilter('duan_li')" id="sbtn-duan_li" class="scatter-pill px-2.5 py-1 rounded-md bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
-              🎯 李录 & 段永平 ({duan_li_scatter_count})
-            </button>
-            <button onclick="setScatterFilter('all')" id="sbtn-all" class="scatter-pill px-2.5 py-1 rounded-md bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
-              🌐 全量标的 ({all_scatter_count})
-            </button>
-          </div>
-
           <!-- SVG Scatter Plot Container -->
-          <div class="relative w-full h-[330px] bg-gray-950/70 rounded-lg p-2 border border-gray-800/80 flex items-center justify-center overflow-hidden">
-            <svg id="sweetSpotSvg" viewBox="0 0 680 340" class="w-full h-full overflow-visible">
+          <div class="relative w-full h-[360px] md:h-[400px] bg-gray-950/70 rounded-lg p-2 border border-gray-800/80 flex items-center justify-center overflow-hidden">
+            <svg id="sweetSpotSvg" viewBox="0 0 960 360" class="w-full h-full overflow-visible">
               <!-- Quadrant Backgrounds -->
               <!-- Q1: Top-Left: Golden Sweet Spot (Cheap + High FCF) -->
-              <rect x="50" y="20" width="300" height="211.5" fill="rgba(16, 185, 129, 0.08)" rx="4" />
-              <text x="60" y="38" fill="#34d399" font-size="11" font-weight="bold">🟢 黄金击球区 (高安全边际 + 强造血)</text>
+              <rect x="50" y="20" width="430" height="227" fill="rgba(16, 185, 129, 0.08)" rx="4" />
+              <text x="65" y="40" fill="#34d399" font-size="11" font-weight="bold">🟢 黄金击球区 (高安全边际 + 强造血)</text>
 
               <!-- Q2: Bottom-Left: Deep Value (Cheap + Lower FCF) -->
-              <rect x="50" y="231.5" width="300" height="58.5" fill="rgba(59, 130, 246, 0.03)" rx="4" />
-              <text x="60" y="280" fill="#60a5fa" font-size="9.5">🔵 深度折价区 (烟蒂/破发成本)</text>
+              <rect x="50" y="247" width="430" height="63" fill="rgba(59, 130, 246, 0.03)" rx="4" />
+              <text x="65" y="295" fill="#60a5fa" font-size="9.5">🔵 深度折价区 (烟蒂/破发成本/周期低点)</text>
 
               <!-- Q3: Top-Right: Quality Premium (High FCF + Expensive) -->
-              <rect x="350" y="20" width="300" height="211.5" fill="rgba(234, 179, 8, 0.03)" rx="4" />
-              <text x="490" y="38" fill="#fbbf24" font-size="10">🟡 核心优质溢价区 (强护城河但偏贵)</text>
+              <rect x="480" y="20" width="430" height="227" fill="rgba(234, 179, 8, 0.03)" rx="4" />
+              <text x="680" y="40" fill="#fbbf24" font-size="10">🟡 核心优质溢价区 (强护城河但偏贵)</text>
 
               <!-- Axes Lines -->
-              <line x1="50" y1="20" x2="50" y2="290" stroke="#374151" stroke-width="1.2" />
-              <line x1="50" y1="290" x2="650" y2="290" stroke="#374151" stroke-width="1.2" />
+              <line x1="50" y1="20" x2="50" y2="310" stroke="#374151" stroke-width="1.2" />
+              <line x1="50" y1="310" x2="910" y2="310" stroke="#374151" stroke-width="1.2" />
               
               <!-- Zero Lines (Dashed) -->
               <!-- X = 0 (Break-even line between Discount and Premium) -->
-              <line x1="350" y1="20" x2="350" y2="290" stroke="#4b5563" stroke-dasharray="4,4" stroke-width="1.2" />
+              <line x1="480" y1="20" x2="480" y2="310" stroke="#4b5563" stroke-dasharray="4,4" stroke-width="1.2" />
               <!-- Y = 4% (Benchmark FCF yield line) -->
-              <line x1="50" y1="231.5" x2="650" y2="231.5" stroke="#4b5563" stroke-dasharray="4,4" stroke-width="1.2" />
+              <line x1="50" y1="247" x2="910" y2="247" stroke="#4b5563" stroke-dasharray="4,4" stroke-width="1.2" />
 
               <!-- Axis Labels -->
-              <text x="350" y="318" text-anchor="middle" fill="#9ca3af" font-size="11">← 现价比大师建仓成本便宜 (安全边际) ｜ 现价比成本贵 (溢价) →</text>
-              <text x="20" y="160" text-anchor="middle" fill="#9ca3af" font-size="10" transform="rotate(-90 20 160)">自由现金流收益率 FCF Yield (%) ↑</text>
+              <text x="480" y="340" text-anchor="middle" fill="#9ca3af" font-size="11">← 现价比大师建仓成本便宜 (安全边际) ｜ 现价比成本贵 (溢价) →</text>
+              <text x="20" y="170" text-anchor="middle" fill="#9ca3af" font-size="10" transform="rotate(-90 20 170)">自由现金流收益率 FCF Yield (%) ↑</text>
               
               <!-- Zero & Benchmark Indicators -->
-              <text x="355" y="282" fill="#6b7280" font-size="9" font-family="monospace">0% 成本线</text>
-              <text x="590" y="226" fill="#6b7280" font-size="9" font-family="monospace">4% 造血基准</text>
+              <text x="485" y="302" fill="#6b7280" font-size="9" font-family="monospace">0% 成本线</text>
+              <text x="835" y="242" fill="#6b7280" font-size="9" font-family="monospace">4% 造血基准</text>
 
               <!-- Scatter Nodes -->
               <g id="scatterNodes"></g>
@@ -2049,45 +2051,6 @@ def generate_html(data: dict) -> str:
             <span class="text-gray-500">气泡大小 = 持仓权重</span>
           </div>
           <span class="text-gray-400">💡 悬浮查看测算坐标 · 点击圆点直达公司独立档案</span>
-        </div>
-      </div>
-
-      <!-- Chart 2: Grand Portfolio Consensus Heatmap -->
-      <div class="lg:col-span-5 terminal-card rounded-xl p-6 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                🌐 全市场超级投资人合并共识
-              </h2>
-              <p class="text-xs text-gray-400 mt-0.5">Dataroma 30+ 机构合并持仓 Top 7 · 点击查看独立公司档案</p>
-            </div>
-            <span class="text-xs text-gray-400 font-mono">Grand Portfolio</span>
-          </div>
-
-          <!-- Top Consensus Bars (Clickable) -->
-          <div class="space-y-3 mt-3">
-            {"".join([f'''
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <a href="companies/{g['ticker']}.html" class="font-medium text-white flex items-center gap-2 group hover:text-emerald-400 transition-colors">
-                  <span class="font-mono text-emerald-400 group-hover:underline font-bold">{i+1}. {g["ticker"]}</span>
-                  <span class="text-gray-400 group-hover:text-gray-200 truncate max-w-[140px]">{clean_company_name(g['ticker'], g.get("company", g.get("company_name", "")))}</span>
-                  <span class="text-[10px] text-gray-500 group-hover:text-emerald-400">↗</span>
-                </a>
-                <span class="font-mono text-gray-300 font-semibold">{g["portfolio_pct"]:.2f}% <span class="text-gray-500 font-normal">({g["ownership_count"]}家)</span></span>
-              </div>
-              <div class="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-500 to-emerald-400 h-2 rounded-full" style="width: {min(100, g['portfolio_pct'] * 30)}%"></div>
-              </div>
-            </div>
-            ''' for i, g in enumerate(data["grand_portfolio"][:7])])}
-          </div>
-        </div>
-
-        <div class="pt-4 border-t border-gray-800 text-xs text-gray-500 flex justify-between items-center">
-          <span>共识占比反映全美顶级价值仓位合并权重</span>
-          <span class="text-emerald-400">AMZN · GOOG · BRK.B 领衔</span>
         </div>
       </div>
     </section>
@@ -2790,15 +2753,15 @@ def generate_html(data: dict) -> str:
     let currentScatterFilter = 'core'; // 'core', 'golden', 'brk', 'duan_li', 'all'
     let currentScatterSearch = '';
 
-    // Bounds: X [-50, +50] -> [50, 650] (Width: 600, Center 0% at 350)
-    // Bounds: Y [-5, +35] -> [290, 30] (Height: 260, 4% line at 231.5)
+    // Bounds: X [-50, +50] -> [50, 910] (Width: 860, Center 0% at 480)
+    // Bounds: Y [-5, +35] -> [310, 30] (Height: 280, 4% line at 247)
     function mapX(costDiff) {{
       const clamped = Math.max(-50, Math.min(50, costDiff));
-      return 50 + ((clamped + 50) / 100) * 600;
+      return 50 + ((clamped + 50) / 100) * 860;
     }}
     function mapY(fcfYield) {{
       const clamped = Math.max(-5, Math.min(35, fcfYield));
-      return 290 - ((clamped - (-5)) / 40) * 260;
+      return 310 - ((clamped - (-5)) / 40) * 280;
     }}
 
     function renderScatter() {{
@@ -2908,8 +2871,8 @@ def generate_html(data: dict) -> str:
 
           // Calculate container relative coordinates
           const rect = svgEl.getBoundingClientRect();
-          const svgWidth = 680;
-          const svgHeight = 340;
+          const svgWidth = 960;
+          const svgHeight = 360;
           const clientX = (cx / svgWidth) * rect.width;
           const clientY = (cy / svgHeight) * rect.height;
 
