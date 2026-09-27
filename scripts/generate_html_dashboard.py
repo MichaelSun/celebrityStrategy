@@ -2015,53 +2015,64 @@ def generate_html(data: dict) -> str:
               </div>
             </div>
 
-            <!-- Right: Axis Explanatory Subtitle -->
-            <div class="text-xs text-gray-400 flex items-center gap-2 flex-wrap">
-              <span class="px-2 py-0.5 rounded bg-gray-800/80 border border-gray-700/60 font-mono text-[11px] text-gray-300">X轴</span>
-              <span>相对建仓成本溢价 (负数越左越便宜)</span>
-              <span class="text-gray-600">｜</span>
-              <span class="px-2 py-0.5 rounded bg-gray-800/80 border border-gray-700/60 font-mono text-[11px] text-gray-300">Y轴</span>
-              <span>FCF 自由现金流收益率 ↑</span>
+            <!-- Right: Axis Explanatory Subtitle (Optimized Dual Badges) -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-900/90 border border-gray-800 text-[11px] shadow-sm whitespace-nowrap">
+                <span class="px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 font-mono text-[10px] font-bold">X 轴</span>
+                <span class="text-gray-300 font-medium">相对成本溢价</span>
+                <span class="text-gray-500 font-mono text-[10px]">(← 越左越便宜)</span>
+              </div>
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-900/90 border border-gray-800 text-[11px] shadow-sm whitespace-nowrap">
+                <span class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono text-[10px] font-bold">Y 轴</span>
+                <span class="text-gray-300 font-medium">FCF 自由现金流收益率</span>
+                <span class="text-emerald-400 font-mono text-[10px]">(↑ 越上造血越强)</span>
+              </div>
             </div>
           </div>
 
-          <!-- SVG Scatter Plot Container -->
-          <div class="relative w-full h-[360px] md:h-[400px] bg-gray-950/70 rounded-lg p-2 border border-gray-800/80 flex items-center justify-center overflow-hidden">
-            <svg id="sweetSpotSvg" viewBox="0 0 960 360" class="w-full h-full overflow-visible">
+          <!-- SVG Scatter Plot Container (Expanded Height for Vertical Clarity) -->
+          <div class="relative w-full h-[480px] md:h-[560px] bg-gray-950/70 rounded-lg p-2 border border-gray-800/80 flex items-center justify-center overflow-hidden">
+            <svg id="sweetSpotSvg" viewBox="0 0 960 520" class="w-full h-full overflow-visible">
               <!-- Quadrant Backgrounds (Clickable to switch Quadrant Drawer) -->
               <!-- Q1: Top-Left: Golden Sweet Spot (Cheap + High FCF) -->
-              <rect x="50" y="20" width="430" height="227" fill="rgba(16, 185, 129, 0.08)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('golden')" />
-              <text x="65" y="40" fill="#34d399" font-size="11" font-weight="bold" class="cursor-pointer select-none" onclick="switchQuadrantTab('golden')">🟢 黄金击球区 (高安全边际 + 强造血)</text>
+              <rect x="50" y="20" width="430" height="333" fill="rgba(16, 185, 129, 0.08)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('golden')" />
+              <text x="65" y="45" fill="#34d399" font-size="11" font-weight="bold" class="cursor-pointer select-none" onclick="switchQuadrantTab('golden')">🟢 黄金击球区 (高安全边际 + 强造血)</text>
 
               <!-- Q2: Bottom-Left: Deep Value (Cheap + Lower FCF) -->
-              <rect x="50" y="247" width="430" height="63" fill="rgba(59, 130, 246, 0.04)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('deep_value')" />
-              <text x="65" y="295" fill="#60a5fa" font-size="9.5" class="cursor-pointer select-none" onclick="switchQuadrantTab('deep_value')">🔵 深度折价区 (烟蒂/破发成本/周期低点)</text>
+              <rect x="50" y="353" width="430" height="97" fill="rgba(59, 130, 246, 0.04)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('deep_value')" />
+              <text x="65" y="435" fill="#60a5fa" font-size="9.5" class="cursor-pointer select-none" onclick="switchQuadrantTab('deep_value')">🔵 深度折价区 (烟蒂/破发成本/周期低点)</text>
 
               <!-- Q3: Top-Right: Quality Premium (High FCF + Expensive) -->
-              <rect x="480" y="20" width="430" height="227" fill="rgba(234, 179, 8, 0.04)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('quality_premium')" />
-              <text x="680" y="40" fill="#fbbf24" font-size="10" class="cursor-pointer select-none" onclick="switchQuadrantTab('quality_premium')">🟡 核心优质溢价区 (强护城河但偏贵)</text>
+              <rect x="480" y="20" width="430" height="333" fill="rgba(234, 179, 8, 0.04)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('quality_premium')" />
+              <text x="680" y="45" fill="#fbbf24" font-size="10" class="cursor-pointer select-none" onclick="switchQuadrantTab('quality_premium')">🟡 核心优质溢价区 (强护城河但偏贵)</text>
 
               <!-- Q4: Bottom-Right: Reasonable Watch (Lower FCF + Expensive) -->
-              <rect x="480" y="247" width="430" height="63" fill="rgba(148, 163, 184, 0.03)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('watch')" />
-              <text x="680" y="295" fill="#94a3b8" font-size="9.5" class="cursor-pointer select-none" onclick="switchQuadrantTab('watch')">⚪ 合理观望区 (适度溢价/待催化)</text>
+              <rect x="480" y="353" width="430" height="97" fill="rgba(148, 163, 184, 0.03)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('watch')" />
+              <text x="680" y="435" fill="#94a3b8" font-size="9.5" class="cursor-pointer select-none" onclick="switchQuadrantTab('watch')">⚪ 合理观望区 (适度溢价/待催化)</text>
 
-              <!-- Axes Lines -->
-              <line x1="50" y1="20" x2="50" y2="310" stroke="#374151" stroke-width="1.2" />
-              <line x1="50" y1="310" x2="910" y2="310" stroke="#374151" stroke-width="1.2" />
+              <!-- Sub-Grid Guide Lines for FCF Levels -->
+              <line x1="50" y1="289" x2="910" y2="289" stroke="#1f2937" stroke-dasharray="2,4" stroke-width="0.8" opacity="0.7" />
+              <text x="865" y="285" fill="#4b5563" font-size="8.5" font-family="monospace">10% FCF</text>
+              <line x1="50" y1="181" x2="910" y2="181" stroke="#1f2937" stroke-dasharray="2,4" stroke-width="0.8" opacity="0.7" />
+              <text x="865" y="177" fill="#4b5563" font-size="8.5" font-family="monospace">20% FCF</text>
+
+              <!-- Main Axes Lines -->
+              <line x1="50" y1="20" x2="50" y2="450" stroke="#374151" stroke-width="1.2" />
+              <line x1="50" y1="450" x2="910" y2="450" stroke="#374151" stroke-width="1.2" />
               
               <!-- Zero Lines (Dashed) -->
               <!-- X = 0 (Break-even line between Discount and Premium) -->
-              <line x1="480" y1="20" x2="480" y2="310" stroke="#4b5563" stroke-dasharray="4,4" stroke-width="1.2" />
+              <line x1="480" y1="20" x2="480" y2="450" stroke="#4b5563" stroke-dasharray="4,4" stroke-width="1.2" />
               <!-- Y = 4% (Benchmark FCF yield line) -->
-              <line x1="50" y1="247" x2="910" y2="247" stroke="#4b5563" stroke-dasharray="4,4" stroke-width="1.2" />
+              <line x1="50" y1="353" x2="910" y2="353" stroke="#4b5563" stroke-dasharray="4,4" stroke-width="1.2" />
 
               <!-- Axis Labels -->
-              <text x="480" y="340" text-anchor="middle" fill="#9ca3af" font-size="11">← 现价比大师建仓成本便宜 (安全边际) ｜ 现价比成本贵 (溢价) →</text>
-              <text x="20" y="170" text-anchor="middle" fill="#9ca3af" font-size="10" transform="rotate(-90 20 170)">自由现金流收益率 FCF Yield (%) ↑</text>
+              <text x="480" y="485" text-anchor="middle" fill="#9ca3af" font-size="11">← 现价比大师建仓成本便宜 (安全边际) ｜ 现价比成本贵 (溢价) →</text>
+              <text x="20" y="235" text-anchor="middle" fill="#9ca3af" font-size="10" transform="rotate(-90 20 235)">自由现金流收益率 FCF Yield (%) ↑</text>
               
               <!-- Zero & Benchmark Indicators -->
-              <text x="485" y="302" fill="#6b7280" font-size="9" font-family="monospace">0% 成本线</text>
-              <text x="835" y="242" fill="#6b7280" font-size="9" font-family="monospace">4% 造血基准</text>
+              <text x="485" y="442" fill="#6b7280" font-size="9" font-family="monospace">0% 成本线</text>
+              <text x="835" y="348" fill="#6b7280" font-size="9" font-family="monospace">4% 造血基准</text>
 
               <!-- Dynamic Crosshairs Layer -->
               <g id="crosshairGroup"></g>
@@ -2896,25 +2907,25 @@ def generate_html(data: dict) -> str:
 
     // Coordinate mapping
     // Bounds: X [-50, +50] -> [50, 910] (Width: 860, Center 0% at 480)
-    // Bounds: Y [-5, +35] -> [310, 30] (Height: 280, 4% line at 247)
+    // Bounds: Y [-5, +35] -> [450, 20] (Height: 430, 4% line at 353)
     function mapX(costDiff) {{
       const clamped = Math.max(-50, Math.min(50, costDiff));
       return 50 + ((clamped + 50) / 100) * 860;
     }}
     function mapY(fcfYield) {{
       const clamped = Math.max(-5, Math.min(35, fcfYield));
-      return 310 - ((clamped - (-5)) / 40) * 280;
+      return 450 - ((clamped - (-5)) / 40) * 430;
     }}
 
     function drawCrosshairs(cx, cy, costDiff, fcfYield) {{
       if (!crosshairGroup) return;
       const xClamped = Math.max(50, Math.min(850, cx - 22));
-      const yClamped = Math.max(20, Math.min(295, cy - 7));
+      const yClamped = Math.max(20, Math.min(435, cy - 7));
       crosshairGroup.innerHTML = `
         <line x1="50" y1="${{cy}}" x2="${{cx}}" y2="${{cy}}" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.85" />
-        <line x1="${{cx}}" y1="310" x2="${{cx}}" y2="${{cy}}" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.85" />
-        <rect x="${{xClamped}}" y="313" width="44" height="15" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="0.8" />
-        <text x="${{xClamped + 22}}" y="324" text-anchor="middle" fill="#fbbf24" font-size="8.5" font-family="monospace" font-weight="bold">${{costDiff > 0 ? '+' : ''}}${{costDiff}}%</text>
+        <line x1="${{cx}}" y1="450" x2="${{cx}}" y2="${{cy}}" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.85" />
+        <rect x="${{xClamped}}" y="453" width="44" height="15" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="0.8" />
+        <text x="${{xClamped + 22}}" y="464" text-anchor="middle" fill="#fbbf24" font-size="8.5" font-family="monospace" font-weight="bold">${{costDiff > 0 ? '+' : ''}}${{costDiff}}%</text>
         <rect x="16" y="${{yClamped}}" width="30" height="14" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="0.8" />
         <text x="31" y="${{yClamped + 10}}" text-anchor="middle" fill="#fbbf24" font-size="8" font-family="monospace" font-weight="bold">${{fcfYield}}%</text>
       `;
@@ -2933,7 +2944,7 @@ def generate_html(data: dict) -> str:
 
       const rect = svgEl.getBoundingClientRect();
       const clientX = (cx / 960) * rect.width;
-      const clientY = (cy / 360) * rect.height;
+      const clientY = (cy / 520) * rect.height;
 
       const tipLeft = clientX > rect.width - 250 ? clientX - 235 : clientX + 15;
       const tipTop = clientY > rect.height - 180 ? clientY - 145 : clientY - 20;
