@@ -2033,22 +2033,22 @@ def generate_html(data: dict) -> str:
           <!-- SVG Scatter Plot Container (Expanded Height for Vertical Clarity) -->
           <div class="relative w-full h-[480px] md:h-[560px] bg-gray-950/70 rounded-lg p-2 border border-gray-800/80 flex items-center justify-center overflow-hidden">
             <svg id="sweetSpotSvg" viewBox="0 0 960 520" class="w-full h-full overflow-visible">
-              <!-- Quadrant Backgrounds (Clickable to switch Quadrant Drawer) -->
+              <!-- Quadrant Backgrounds (Independent visual backdrop) -->
               <!-- Q1: Top-Left: Golden Sweet Spot (Cheap + High FCF) -->
-              <rect x="50" y="20" width="430" height="333" fill="rgba(16, 185, 129, 0.08)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('golden')" />
-              <text x="65" y="45" fill="#34d399" font-size="11" font-weight="bold" class="cursor-pointer select-none" onclick="switchQuadrantTab('golden')">🟢 黄金击球区 (高安全边际 + 强造血)</text>
+              <rect x="50" y="20" width="430" height="333" fill="rgba(16, 185, 129, 0.08)" rx="4" />
+              <text x="65" y="45" fill="#34d399" font-size="11" font-weight="bold" class="select-none">🟢 黄金击球区 (高安全边际 + 强造血)</text>
 
               <!-- Q2: Bottom-Left: Deep Value (Cheap + Lower FCF) -->
-              <rect x="50" y="353" width="430" height="97" fill="rgba(59, 130, 246, 0.04)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('deep_value')" />
-              <text x="65" y="435" fill="#60a5fa" font-size="9.5" class="cursor-pointer select-none" onclick="switchQuadrantTab('deep_value')">🔵 深度折价区 (烟蒂/破发成本/周期低点)</text>
+              <rect x="50" y="353" width="430" height="97" fill="rgba(59, 130, 246, 0.04)" rx="4" />
+              <text x="65" y="435" fill="#60a5fa" font-size="9.5" class="select-none">🔵 深度折价区 (烟蒂/破发成本/周期低点)</text>
 
               <!-- Q3: Top-Right: Quality Premium (High FCF + Expensive) -->
-              <rect x="480" y="20" width="430" height="333" fill="rgba(234, 179, 8, 0.04)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('quality_premium')" />
-              <text x="680" y="45" fill="#fbbf24" font-size="10" class="cursor-pointer select-none" onclick="switchQuadrantTab('quality_premium')">🟡 核心优质溢价区 (强护城河但偏贵)</text>
+              <rect x="480" y="20" width="430" height="333" fill="rgba(234, 179, 8, 0.04)" rx="4" />
+              <text x="680" y="45" fill="#fbbf24" font-size="10" class="select-none">🟡 核心优质溢价区 (强护城河但偏贵)</text>
 
               <!-- Q4: Bottom-Right: Reasonable Watch (Lower FCF + Expensive) -->
-              <rect x="480" y="353" width="430" height="97" fill="rgba(148, 163, 184, 0.03)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('watch')" />
-              <text x="680" y="435" fill="#94a3b8" font-size="9.5" class="cursor-pointer select-none" onclick="switchQuadrantTab('watch')">⚪ 合理观望区 (适度溢价/待催化)</text>
+              <rect x="480" y="353" width="430" height="97" fill="rgba(148, 163, 184, 0.03)" rx="4" />
+              <text x="680" y="435" fill="#94a3b8" font-size="9.5" class="select-none">⚪ 合理观望区 (适度溢价/待催化)</text>
 
               <!-- Sub-Grid Guide Lines for FCF Levels -->
               <line x1="50" y1="289" x2="910" y2="289" stroke="#1f2937" stroke-dasharray="2,4" stroke-width="0.8" opacity="0.7" />
@@ -2092,7 +2092,7 @@ def generate_html(data: dict) -> str:
             <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> 溢价筹码 (高于大师成本)</span>
             <span class="text-gray-500">气泡大小 = 持仓权重</span>
           </div>
-          <span class="text-gray-400">💡 悬浮圆点即时穿透联动下表明细 · 点击象限标签穿透对应标的池</span>
+          <span class="text-gray-400">💡 悬浮圆点查看详细测算坐标 · 下方按象限独立检索各公司档案</span>
         </div>
 
         <!-- ── Quadrant Drilldown Discovery Drawer (方案 B 象限穿透明细抽屉) ── -->
@@ -2142,6 +2142,18 @@ def generate_html(data: dict) -> str:
                 <span class="absolute inset-y-0 left-2.5 flex items-center text-[11px] text-gray-500 pointer-events-none">🔍</span>
                 <button id="drawerFilterClear" onclick="clearDrawerFilter()" class="hidden absolute right-2 top-1.5 text-xs text-gray-500 hover:text-white">✕</button>
               </div>
+            </div>
+          </div>
+
+          <!-- Active Quadrant Philosophy & Interpretation Banner -->
+          <div id="quadrantBanner" class="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/25 text-xs text-gray-300 mb-3 flex items-start gap-2.5">
+            <span id="quadrantBannerIcon" class="text-lg leading-none shrink-0 mt-0.5">🟢</span>
+            <div class="flex-1">
+              <span id="quadrantBannerTitle" class="font-bold text-emerald-400 mr-2 text-xs">黄金击球区（Sweet Spot）</span>
+              <span id="quadrantBannerDesc" class="text-gray-300 text-[11.5px] leading-relaxed">现价低于超级投资人加权建仓成本（具备买底安全边际），且具备 ≥4.0% 自由现金流收益率（内生造血充沛）。最符合“以四毛钱买一美元资产”的黄金配置窗口。</span>
+            </div>
+            <div id="quadrantItemCount" class="text-[11px] text-emerald-400 font-mono font-bold whitespace-nowrap px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              {golden_quad_count} 家标的
             </div>
           </div>
 
@@ -2978,64 +2990,6 @@ def generate_html(data: dict) -> str:
       if (tooltip) tooltip.classList.add('hidden');
     }}
 
-    function highlightDrawerCard(ticker) {{
-      document.querySelectorAll('.quadrant-card').forEach(c => {{
-        c.classList.remove('ring-2', 'ring-emerald-400', 'bg-emerald-950/40', 'border-emerald-400');
-      }});
-      const card = document.querySelector(`.quadrant-card[data-ticker="${{ticker}}"]`);
-      if (card) {{
-        card.classList.add('ring-2', 'ring-emerald-400', 'bg-emerald-950/40', 'border-emerald-400');
-        card.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
-      }}
-    }}
-
-    function unhighlightDrawerCards() {{
-      document.querySelectorAll('.quadrant-card').forEach(c => {{
-        c.classList.remove('ring-2', 'ring-emerald-400', 'bg-emerald-950/40', 'border-emerald-400');
-      }});
-    }}
-
-    function highlightScatterBubble(ticker) {{
-      const pt = scatterData.find(p => p.ticker === ticker);
-      if (!pt) return;
-      const circle = document.getElementById('scatter-circle-' + ticker);
-      const ring = document.getElementById('scatter-pulse-' + ticker);
-      const cx = mapX(pt.x_cost_diff);
-      const cy = mapY(pt.y_fcf_yield);
-      const r = Math.max(5, Math.min(16, Math.sqrt(pt.weight || 1) * 3));
-
-      if (circle) {{
-        circle.setAttribute('r', r + 4);
-        circle.setAttribute('stroke', '#fbbf24');
-        circle.setAttribute('stroke-width', '2.5');
-      }}
-      if (ring) {{
-        ring.classList.remove('hidden');
-      }}
-      drawCrosshairs(cx, cy, pt.x_cost_diff, pt.y_fcf_yield);
-      showTooltip(pt, cx, cy);
-    }}
-
-    function unhighlightScatterBubble(ticker) {{
-      const pt = scatterData.find(p => p.ticker === ticker);
-      if (!pt) return;
-      const circle = document.getElementById('scatter-circle-' + ticker);
-      const ring = document.getElementById('scatter-pulse-' + ticker);
-      const r = Math.max(5, Math.min(16, Math.sqrt(pt.weight || 1) * 3));
-      const isCheap = pt.x_cost_diff < 0;
-
-      if (circle) {{
-        circle.setAttribute('r', r);
-        circle.setAttribute('stroke', isCheap ? '#34d399' : '#60a5fa');
-        circle.setAttribute('stroke-width', '1.5');
-      }}
-      if (ring && !ring.getAttribute('data-search-matched')) {{
-        ring.classList.add('hidden');
-      }}
-      clearCrosshairs();
-      hideTooltip();
-    }}
-
     function renderScatter() {{
       if (!scatterGroup) return;
       scatterGroup.innerHTML = '';
@@ -3129,14 +3083,13 @@ def generate_html(data: dict) -> str:
           link.appendChild(innerText);
         }}
 
-        // Hover events
+        // Hover events (Pure scatter plot tooltip & crosshairs, decoupled from drawer)
         link.addEventListener('mouseenter', () => {{
           circle.setAttribute('r', isMatched ? r + 5 : r + 3.5);
           circle.setAttribute('stroke', '#ffffff');
           circle.setAttribute('stroke-width', '2.5');
           drawCrosshairs(cx, cy, pt.x_cost_diff, pt.y_fcf_yield);
           showTooltip(pt, cx, cy);
-          highlightDrawerCard(pt.ticker);
         }});
 
         link.addEventListener('mouseleave', () => {{
@@ -3145,7 +3098,6 @@ def generate_html(data: dict) -> str:
           circle.setAttribute('stroke-width', isMatched ? '2.5' : '1.5');
           clearCrosshairs();
           hideTooltip();
-          unhighlightDrawerCards();
         }});
 
         scatterGroup.appendChild(link);
@@ -3186,6 +3138,11 @@ def generate_html(data: dict) -> str:
         }});
       }}
 
+      const countEl = document.getElementById('quadrantItemCount');
+      if (countEl) {{
+        countEl.textContent = `${{list.length}} 家标的`;
+      }}
+
       if (list.length === 0) {{
         container.innerHTML = `
           <div class="col-span-full py-8 text-center text-gray-500 text-xs">
@@ -3205,9 +3162,6 @@ def generate_html(data: dict) -> str:
 
         return `
           <div class="quadrant-card group relative p-3 rounded-xl bg-gray-900/85 hover:bg-gray-800/80 border border-gray-800 hover:border-emerald-500/50 transition-all duration-150 flex flex-col justify-between shadow-sm cursor-pointer"
-               data-ticker="${{pt.ticker}}"
-               onmouseenter="highlightScatterBubble('${{pt.ticker}}')"
-               onmouseleave="unhighlightScatterBubble('${{pt.ticker}}')"
                onclick="window.location.href='companies/${{pt.ticker}}.html'">
             <div>
               <!-- Top Row: Ticker, Name, Badge -->
@@ -3270,6 +3224,21 @@ def generate_html(data: dict) -> str:
       const activeBtn = document.getElementById('qtab-' + quadrantKey);
       if (activeBtn) {{
         activeBtn.className = 'qtab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap flex items-center gap-1.5';
+      }}
+
+      // Update Banner
+      const banner = document.getElementById('quadrantBanner');
+      const icon = document.getElementById('quadrantBannerIcon');
+      const title = document.getElementById('quadrantBannerTitle');
+      const desc = document.getElementById('quadrantBannerDesc');
+      if (banner && meta) {{
+        banner.className = `p-3 rounded-xl ${{meta.bgBorder}} text-xs text-gray-300 mb-3 flex items-start gap-2.5`;
+        if (icon) icon.textContent = meta.icon;
+        if (title) {{
+          title.className = `font-bold ${{meta.titleColor}} mr-2 text-xs`;
+          title.textContent = meta.name;
+        }}
+        if (desc) desc.textContent = meta.desc;
       }}
 
       renderQuadrantDrawer();
