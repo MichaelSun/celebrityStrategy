@@ -96,12 +96,21 @@ def sync_and_deploy():
     # Ensure docs/index.html and docs/companies are synced from reports if reports is newer
     rep_dash = os.path.join(REPORTS_DIR, "dashboard.html")
     docs_dash = os.path.join(DOCS_DIR, "index.html")
-    if os.path.exists(rep_dash):
-        if not os.path.exists(docs_dash) or os.path.getmtime(rep_dash) > os.path.getmtime(docs_dash):
+    if os.path.exists(docs_dash) and os.path.exists(rep_dash):
+        if os.path.getmtime(docs_dash) > os.path.getmtime(rep_dash):
+            print("  📋 检测到 docs/index.html 较新，同步至 reports/dashboard.html")
+            with open(docs_dash, "r", encoding="utf-8") as f_src:
+                with open(rep_dash, "w", encoding="utf-8") as f_dst:
+                    f_dst.write(f_src.read())
+        elif os.path.getmtime(rep_dash) > os.path.getmtime(docs_dash):
             print("  📋 检测到 reports/dashboard.html 较新，同步至 docs/index.html")
             with open(rep_dash, "r", encoding="utf-8") as f_src:
                 with open(docs_dash, "w", encoding="utf-8") as f_dst:
                     f_dst.write(f_src.read())
+    elif os.path.exists(rep_dash) and not os.path.exists(docs_dash):
+        with open(rep_dash, "r", encoding="utf-8") as f_src:
+            with open(docs_dash, "w", encoding="utf-8") as f_dst:
+                f_dst.write(f_src.read())
 
     rep_comp = os.path.join(REPORTS_DIR, "companies")
     docs_comp = os.path.join(DOCS_DIR, "companies")
