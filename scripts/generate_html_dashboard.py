@@ -1593,28 +1593,55 @@ def generate_html(data: dict) -> str:
     top_discount_item = next((c for c in cost_matrix if c["diff_pct"] is not None and c["diff_pct"] < 0), None)
 
     # Scatter points: Cost Edge (%) vs FCF Yield (%)
-    scatter_points = []
-    for t, v in data["valuations"].items():
-        rep_prices = [h["reported_price"] for h in data["holdings"] if h["ticker"] == t and h.get("reported_price")]
-        if rep_prices and v.get("current_price") and v.get("fcf_yield") is not None:
-            avg_rep = sum(rep_prices) / len(rep_prices)
-            cur_p = v["current_price"]
-            diff_pct = round(((cur_p - avg_rep) / avg_rep) * 100, 1)
-            fcf = round(v["fcf_yield"], 1)
-            # Find max weight or score
-            weights = [h.get("portfolio_weight", 0) for h in data["holdings"] if h["ticker"] == t]
-            max_w = max(weights) if weights else 1.0
-            scatter_points.append({
-                "ticker": t,
-                "x_cost_diff": diff_pct,
-                "y_fcf_yield": fcf,
-                "weight": max_w,
-                "pe": v.get("pe_ttm", "N/A"),
-                "sector": v.get("sector", "General")
-            })
+    # Find top 35 core holdings by guru weight among valid valuation tickers
+    valid_cost_items = [c for c in cost_matrix if c.get("diff_pct") is not None and c.get("fcf_yield") is not None]
+    sorted_by_weight = sorted(
+        valid_cost_items,
+        key=lambda c: max((g.get("portfolio_weight", 0) for g in c.get("gurus_detail", [])), default=0),
+        reverse=True
+    )
+    core_tickers = set(c["ticker"] for c in sorted_by_weight[:35])
 
-    # Prepare JSON serializable structures for client-side JS
+    scatter_points = []
+    for c in valid_cost_items:
+        t = c["ticker"]
+        weights = [g.get("portfolio_weight", 0) for g in c.get("gurus_detail", [])]
+        max_w = max(weights) if weights else 1.0
+        gurus_list = []
+        guru_codes = []
+        for g in c.get("gurus_detail", []):
+            short_g = (g.get("guru_name") or g.get("guru_code", "")).split("(")[0].strip()
+            w_str = f" ({g.get('portfolio_weight', 0):.1f}%)" if g.get("portfolio_weight") else ""
+            gurus_list.append(f"{short_g}{w_str}")
+            if g.get("guru_code"):
+                guru_codes.append(g["guru_code"])
+
+        diff_val = round(c["diff_pct"], 1)
+        fcf_val = round(c["fcf_yield"], 1)
+
+        scatter_points.append({
+            "ticker": t,
+            "company_name": clean_company_name(t, c.get("company_name", "")),
+            "x_cost_diff": diff_val,
+            "y_fcf_yield": fcf_val,
+            "weight": round(max_w, 2),
+            "current_price": c.get("current_price"),
+            "weighted_cost": c.get("weighted_cost"),
+            "pe": c.get("pe_ttm") if c.get("pe_ttm") is not None else "N/A",
+            "sector": c.get("sector", "General"),
+            "is_core": t in core_tickers,
+            "is_golden": diff_val < 0,
+            "has_brk": "BRK" in guru_codes,
+            "has_duan_li": ("HH" in guru_codes) or ("HC" in guru_codes),
+            "gurus_str": " · ".join(gurus_list) if gurus_list else "顶级机构持仓",
+        })
+
     scatter_json = json.dumps(scatter_points)
+    golden_scatter_count = sum(1 for p in scatter_points if p["is_golden"])
+    core_scatter_count = sum(1 for p in scatter_points if p["is_core"])
+    brk_scatter_count = sum(1 for p in scatter_points if p["has_brk"])
+    duan_li_scatter_count = sum(1 for p in scatter_points if p["has_duan_li"])
+    all_scatter_count = len(scatter_points)
 
     # Format KPI resonance links
     kpi_res_links = " · ".join([
@@ -1763,6 +1790,7 @@ def generate_html(data: dict) -> str:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CelebrityStrategy - 顶级价值投资机构 13F & 13G 聪明钱击球区雷达</title>
   <meta name="description" content="CelebrityStrategy - 顶级价值投资机构 13F & 13G 变动审计 · 多季度决心积分 · 成本优势击球区雷达">
   <meta property="og:title" content="🏛️ CelebrityStrategy 聪明钱价值投资雷达">
   <meta property="og:description" content="跟踪李录、段永平、巴菲特等顶级价值大师多季度持仓、击破13F滞后性、离岸港A股资产与成本击球区。">
@@ -1924,41 +1952,103 @@ def generate_html(data: dict) -> str:
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
       <!-- Chart 1: The Sweet Spot Matrix (Interactive SVG Scatter) -->
-      <div class="lg:col-span-7 terminal-card rounded-xl p-6">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              🎯 聪明钱“击球区”矩阵（The Sweet Spot Matrix）
-            </h2>
-            <p class="text-xs text-gray-400 mt-0.5">
-              X 轴: 相对大师买入成本溢价（负数越靠左越便宜） ｜ Y 轴: 自由现金流收益率 (FCF Yield) · 点击标的直达公司页面
-            </p>
+      <div class="lg:col-span-7 terminal-card rounded-xl p-5 flex flex-col justify-between">
+        <div>
+          <!-- Header & Controls -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-base sm:text-lg font-semibold text-white flex items-center gap-2">
+                  🎯 聪明钱“击球区”矩阵（The Sweet Spot Matrix）
+                </h2>
+                <span id="scatterCountBadge" class="text-[11px] px-2 py-0.5 bg-gray-800 text-gray-300 border border-gray-700 rounded font-mono">
+                  显示 {core_scatter_count} / {all_scatter_count}
+                </span>
+              </div>
+              <p class="text-xs text-gray-400 mt-0.5">
+                X 轴: 相对建仓成本溢价 (负数越左越便宜) ｜ Y 轴: 自由现金流收益率 (FCF Yield) ↑
+              </p>
+            </div>
+            
+            <!-- Quick Search Input -->
+            <div class="relative">
+              <input type="text" id="scatterSearch" placeholder="🔍 快速定位标的 (如 PDD, AAPL)..." 
+                class="text-xs bg-gray-950/80 border border-gray-700/80 rounded-lg px-2.5 py-1.5 pr-7 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 w-full sm:w-48 transition-all"
+                oninput="onScatterSearch(this.value)" />
+              <button id="scatterSearchClear" onclick="clearScatterSearch()" class="hidden absolute right-2.5 top-1.5 text-xs text-gray-400 hover:text-white">✕</button>
+            </div>
           </div>
-          <span class="text-xs px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded">
-            🟢 左上象限 = 极佳安全边际
-          </span>
+
+          <!-- Filter Pills Toolbar -->
+          <div class="flex items-center gap-1.5 flex-wrap mb-3 text-xs" id="scatterFilterPills">
+            <button onclick="setScatterFilter('core')" id="sbtn-core" class="scatter-pill px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-medium transition-all shadow-sm">
+              🔥 核心重仓 (Top {core_scatter_count})
+            </button>
+            <button onclick="setScatterFilter('golden')" id="sbtn-golden" class="scatter-pill px-2.5 py-1 rounded-md bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
+              🟢 黄金击球区 ({golden_scatter_count})
+            </button>
+            <button onclick="setScatterFilter('brk')" id="sbtn-brk" class="scatter-pill px-2.5 py-1 rounded-md bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
+              👑 沃伦·巴菲特 ({brk_scatter_count})
+            </button>
+            <button onclick="setScatterFilter('duan_li')" id="sbtn-duan_li" class="scatter-pill px-2.5 py-1 rounded-md bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
+              🎯 李录 & 段永平 ({duan_li_scatter_count})
+            </button>
+            <button onclick="setScatterFilter('all')" id="sbtn-all" class="scatter-pill px-2.5 py-1 rounded-md bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
+              🌐 全量标的 ({all_scatter_count})
+            </button>
+          </div>
+
+          <!-- SVG Scatter Plot Container -->
+          <div class="relative w-full h-[330px] bg-gray-950/70 rounded-lg p-2 border border-gray-800/80 flex items-center justify-center overflow-hidden">
+            <svg id="sweetSpotSvg" viewBox="0 0 680 340" class="w-full h-full overflow-visible">
+              <!-- Quadrant Backgrounds -->
+              <!-- Q1: Top-Left: Golden Sweet Spot (Cheap + High FCF) -->
+              <rect x="50" y="20" width="300" height="211.5" fill="rgba(16, 185, 129, 0.08)" rx="4" />
+              <text x="60" y="38" fill="#34d399" font-size="11" font-weight="bold">🟢 黄金击球区 (高安全边际 + 强造血)</text>
+
+              <!-- Q2: Bottom-Left: Deep Value (Cheap + Lower FCF) -->
+              <rect x="50" y="231.5" width="300" height="58.5" fill="rgba(59, 130, 246, 0.03)" rx="4" />
+              <text x="60" y="280" fill="#60a5fa" font-size="9.5">🔵 深度折价区 (烟蒂/破发成本)</text>
+
+              <!-- Q3: Top-Right: Quality Premium (High FCF + Expensive) -->
+              <rect x="350" y="20" width="300" height="211.5" fill="rgba(234, 179, 8, 0.03)" rx="4" />
+              <text x="490" y="38" fill="#fbbf24" font-size="10">🟡 核心优质溢价区 (强护城河但偏贵)</text>
+
+              <!-- Axes Lines -->
+              <line x1="50" y1="20" x2="50" y2="290" stroke="#374151" stroke-width="1.2" />
+              <line x1="50" y1="290" x2="650" y2="290" stroke="#374151" stroke-width="1.2" />
+              
+              <!-- Zero Lines (Dashed) -->
+              <!-- X = 0 (Break-even line between Discount and Premium) -->
+              <line x1="350" y1="20" x2="350" y2="290" stroke="#4b5563" stroke-dasharray="4,4" stroke-width="1.2" />
+              <!-- Y = 4% (Benchmark FCF yield line) -->
+              <line x1="50" y1="231.5" x2="650" y2="231.5" stroke="#4b5563" stroke-dasharray="4,4" stroke-width="1.2" />
+
+              <!-- Axis Labels -->
+              <text x="350" y="318" text-anchor="middle" fill="#9ca3af" font-size="11">← 现价比大师建仓成本便宜 (安全边际) ｜ 现价比成本贵 (溢价) →</text>
+              <text x="20" y="160" text-anchor="middle" fill="#9ca3af" font-size="10" transform="rotate(-90 20 160)">自由现金流收益率 FCF Yield (%) ↑</text>
+              
+              <!-- Zero & Benchmark Indicators -->
+              <text x="355" y="282" fill="#6b7280" font-size="9" font-family="monospace">0% 成本线</text>
+              <text x="590" y="226" fill="#6b7280" font-size="9" font-family="monospace">4% 造血基准</text>
+
+              <!-- Scatter Nodes -->
+              <g id="scatterNodes"></g>
+            </svg>
+
+            <!-- Interactive Rich Tooltip -->
+            <div id="chartTooltip" class="absolute hidden px-3.5 py-2.5 bg-gray-900/95 backdrop-blur-md border border-gray-700 text-xs rounded-lg shadow-2xl pointer-events-none z-30 min-w-[220px]"></div>
+          </div>
         </div>
 
-        <!-- SVG Scatter Plot Container -->
-        <div class="relative w-full h-[320px] bg-gray-900/60 rounded-lg p-2 border border-gray-800 flex items-center justify-center">
-          <svg id="sweetSpotSvg" viewBox="0 0 600 300" class="w-full h-full overflow-visible">
-            <!-- Background Grids & Quadrants -->
-            <rect x="50" y="20" width="250" height="130" fill="rgba(16, 185, 129, 0.05)" />
-            <text x="55" y="35" fill="#34d399" font-size="10" font-weight="bold">🟢 黄金买点区 (便宜 + 现金造血高)</text>
-
-            <line x1="50" y1="20" x2="50" y2="270" stroke="#374151" stroke-width="1" />
-            <line x1="50" y1="270" x2="570" y2="270" stroke="#374151" stroke-width="1" />
-            <line x1="300" y1="20" x2="300" y2="270" stroke="#4b5563" stroke-dasharray="3,3" stroke-width="1" />
-            <line x1="50" y1="150" x2="570" y2="150" stroke="#4b5563" stroke-dasharray="3,3" stroke-width="1" />
-
-            <!-- Axis Labels -->
-            <text x="300" y="290" text-anchor="middle" fill="#9ca3af" font-size="10">← 现价比成本更便宜 (Discount) ｜ 现价比成本贵 (Premium) →</text>
-            <text x="25" y="150" text-anchor="middle" fill="#9ca3af" font-size="10" transform="rotate(-90 25 150)">FCF Yield (%) ↑</text>
-
-            <!-- Scatter Bubbles Rendered by JS -->
-            <g id="scatterNodes"></g>
-          </svg>
-          <div id="chartTooltip" class="absolute hidden px-3 py-2 bg-gray-900 border border-gray-700 text-xs rounded shadow-xl pointer-events-none z-20"></div>
+        <!-- Matrix Footer Legend & Instruction -->
+        <div class="pt-3 mt-2 border-t border-gray-800 text-[11px] text-gray-400 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-3">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> 折价击球 (低于大师成本)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> 溢价筹码 (高于大师成本)</span>
+            <span class="text-gray-500">气泡大小 = 持仓权重</span>
+          </div>
+          <span class="text-gray-400">💡 悬浮查看测算坐标 · 点击圆点直达公司独立档案</span>
         </div>
       </div>
 
@@ -2695,73 +2785,228 @@ def generate_html(data: dict) -> str:
     const scatterData = {scatter_json};
     const scatterGroup = document.getElementById('scatterNodes');
     const tooltip = document.getElementById('chartTooltip');
+    const svgEl = document.getElementById('sweetSpotSvg');
 
-    // Bounds: X [-40, +40] -> [50, 550], Y [-10, 70] -> [270, 30]
+    let currentScatterFilter = 'core'; // 'core', 'golden', 'brk', 'duan_li', 'all'
+    let currentScatterSearch = '';
+
+    // Bounds: X [-50, +50] -> [50, 650] (Width: 600, Center 0% at 350)
+    // Bounds: Y [-5, +35] -> [290, 30] (Height: 260, 4% line at 231.5)
     function mapX(costDiff) {{
-      const clamped = Math.max(-40, Math.min(40, costDiff));
-      return 50 + ((clamped + 40) / 80) * 500;
+      const clamped = Math.max(-50, Math.min(50, costDiff));
+      return 50 + ((clamped + 50) / 100) * 600;
     }}
     function mapY(fcfYield) {{
-      const clamped = Math.max(-10, Math.min(70, fcfYield));
-      return 270 - ((clamped + 10) / 80) * 240;
+      const clamped = Math.max(-5, Math.min(35, fcfYield));
+      return 290 - ((clamped - (-5)) / 40) * 260;
     }}
 
-    scatterData.forEach(pt => {{
-      const cx = mapX(pt.x_cost_diff);
-      const cy = mapY(pt.y_fcf_yield);
-      const r = Math.max(6, Math.min(18, Math.sqrt(pt.weight || 1) * 3));
-      const isCheap = pt.x_cost_diff < 0;
+    function renderScatter() {{
+      if (!scatterGroup) return;
+      scatterGroup.innerHTML = '';
 
-      // Wrap in link to company page!
-      const link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
-      link.setAttribute('href', `companies/${{pt.ticker}}.html`);
-      link.setAttribute('class', 'group cursor-pointer');
+      // 1. Filter by current active tab/filter
+      let filtered = scatterData;
+      if (currentScatterFilter === 'core') {{
+        filtered = filtered.filter(p => p.is_core);
+      }} else if (currentScatterFilter === 'golden') {{
+        filtered = filtered.filter(p => p.is_golden);
+      }} else if (currentScatterFilter === 'brk') {{
+        filtered = filtered.filter(p => p.has_brk);
+      }} else if (currentScatterFilter === 'duan_li') {{
+        filtered = filtered.filter(p => p.has_duan_li);
+      }}
 
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', cx);
-      circle.setAttribute('cy', cy);
-      circle.setAttribute('r', r);
-      circle.setAttribute('fill', isCheap ? '#10b981' : '#3b82f6');
-      circle.setAttribute('fill-opacity', '0.75');
-      circle.setAttribute('stroke', isCheap ? '#34d399' : '#60a5fa');
-      circle.setAttribute('stroke-width', '1.5');
-      circle.setAttribute('class', 'hover:stroke-white hover:stroke-2 transition-all');
+      // 2. Filter or highlight by search query
+      const searchQ = (currentScatterSearch || '').trim().toLowerCase();
+      let matchedTickers = new Set();
+      if (searchQ) {{
+        filtered = filtered.filter(p => {{
+          const m = p.ticker.toLowerCase().includes(searchQ) || 
+                    (p.company_name && p.company_name.toLowerCase().includes(searchQ));
+          if (m) matchedTickers.add(p.ticker);
+          return m;
+        }});
+      }}
 
-      // Ticker text label
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', cx + r + 3);
-      text.setAttribute('y', cy + 3);
-      text.setAttribute('fill', '#e2e8f0');
-      text.setAttribute('font-size', '9');
-      text.setAttribute('font-weight', 'bold');
-      text.setAttribute('class', 'group-hover:fill-emerald-400 transition-colors');
-      text.textContent = pt.ticker;
+      // Update count badge
+      const countBadge = document.getElementById('scatterCountBadge');
+      if (countBadge) {{
+        countBadge.textContent = `显示 ${{filtered.length}} / ${{scatterData.length}}`;
+      }}
 
-      // Hover events
-      link.addEventListener('mouseenter', (e) => {{
-        tooltip.style.left = (cx + 20) + 'px';
-        tooltip.style.top = (cy - 10) + 'px';
-        tooltip.innerHTML = `
-          <div class="font-bold text-white text-sm">${{pt.ticker}} <span class="text-xs text-emerald-400 font-normal underline ml-1">查看独立页面 ↗</span></div>
-          <div class="text-gray-300">成本差异: <span class="${{pt.x_cost_diff < 0 ? 'text-emerald-400' : 'text-amber-400'}} font-bold">${{pt.x_cost_diff > 0 ? '+' : ''}}${{pt.x_cost_diff}}%</span></div>
-          <div class="text-gray-300">FCF Yield: <span class="text-emerald-400 font-bold">${{pt.y_fcf_yield}}%</span></div>
-          <div class="text-gray-400">P/E (TTM): ${{pt.pe}}x</div>
-        `;
-        tooltip.classList.remove('hidden');
+      // Sort points so larger bubbles are drawn first (smaller on top for easy clicking)
+      const sortedPoints = [...filtered].sort((a, b) => (b.weight || 0) - (a.weight || 0));
+
+      // Determine which points get permanent visible labels:
+      // In core / brk / duan_li mode or when search is active, show more labels;
+      // In all mode, show labels only for Top 18 by weight or matched search items
+      const showAllLabels = filtered.length <= 25 || searchQ.length > 0;
+      const topLabelSet = new Set(sortedPoints.slice(0, 18).map(p => p.ticker));
+
+      sortedPoints.forEach(pt => {{
+        const cx = mapX(pt.x_cost_diff);
+        const cy = mapY(pt.y_fcf_yield);
+        const r = Math.max(5, Math.min(16, Math.sqrt(pt.weight || 1) * 3));
+        const isCheap = pt.x_cost_diff < 0;
+        const isMatched = searchQ && matchedTickers.has(pt.ticker);
+
+        // Wrap in link to company page!
+        const link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
+        link.setAttribute('href', `companies/${{pt.ticker}}.html`);
+        link.setAttribute('class', 'group cursor-pointer');
+
+        // Circle node
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', cx);
+        circle.setAttribute('cy', cy);
+        circle.setAttribute('r', isMatched ? r + 3 : r);
+        circle.setAttribute('fill', isCheap ? '#10b981' : '#3b82f6');
+        circle.setAttribute('fill-opacity', isMatched ? '1.0' : '0.8');
+        circle.setAttribute('stroke', isMatched ? '#fbbf24' : (isCheap ? '#34d399' : '#60a5fa'));
+        circle.setAttribute('stroke-width', isMatched ? '2.5' : '1.5');
+        circle.setAttribute('class', 'transition-all duration-200');
+
+        // Highlight ring if matched search
+        if (isMatched) {{
+          const pulseRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          pulseRing.setAttribute('cx', cx);
+          pulseRing.setAttribute('cy', cy);
+          pulseRing.setAttribute('r', r + 6);
+          pulseRing.setAttribute('fill', 'none');
+          pulseRing.setAttribute('stroke', '#fbbf24');
+          pulseRing.setAttribute('stroke-width', '1.5');
+          pulseRing.setAttribute('stroke-dasharray', '3,3');
+          pulseRing.setAttribute('opacity', '0.85');
+          link.appendChild(pulseRing);
+        }}
+
+        // Text label
+        const shouldShowLabel = isMatched || showAllLabels || topLabelSet.has(pt.ticker);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', cx + r + 3);
+        text.setAttribute('y', cy + 3.5);
+        text.setAttribute('fill', isMatched ? '#fbbf24' : '#e2e8f0');
+        text.setAttribute('font-size', isMatched ? '11' : '9.5');
+        text.setAttribute('font-family', 'ui-monospace, monospace');
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('class', shouldShowLabel ? 'transition-colors select-none' : 'hidden transition-colors select-none');
+        text.textContent = pt.ticker;
+
+        // Hover events
+        link.addEventListener('mouseenter', (e) => {{
+          circle.setAttribute('r', r + 3.5);
+          circle.setAttribute('stroke', '#ffffff');
+          circle.setAttribute('stroke-width', '2.5');
+          text.classList.remove('hidden');
+          text.setAttribute('fill', '#ffffff');
+
+          const costStr = pt.weighted_cost ? `$${{Number(pt.weighted_cost).toFixed(2)}}` : '—';
+          const curStr = pt.current_price ? `$${{Number(pt.current_price).toFixed(2)}}` : '—';
+          const diffColor = pt.x_cost_diff < 0 ? 'text-emerald-400' : 'text-amber-400';
+          const diffSign = pt.x_cost_diff > 0 ? '+' : '';
+
+          // Calculate container relative coordinates
+          const rect = svgEl.getBoundingClientRect();
+          const svgWidth = 680;
+          const svgHeight = 340;
+          const clientX = (cx / svgWidth) * rect.width;
+          const clientY = (cy / svgHeight) * rect.height;
+
+          // Prevent tooltip from overflowing right or bottom
+          const tipLeft = clientX > rect.width - 240 ? clientX - 220 : clientX + 15;
+          const tipTop = clientY > rect.height - 180 ? clientY - 140 : clientY - 20;
+
+          tooltip.style.left = `${{Math.max(10, tipLeft)}}px`;
+          tooltip.style.top = `${{Math.max(10, tipTop)}}px`;
+          tooltip.innerHTML = `
+            <div class="flex items-center justify-between gap-2 border-b border-gray-700/80 pb-1.5 mb-2">
+              <div>
+                <span class="font-bold text-white text-sm font-mono">${{pt.ticker}}</span>
+                <span class="text-[11px] text-gray-400 ml-1.5">${{pt.company_name}}</span>
+              </div>
+              <span class="text-[10px] px-1.5 py-0.5 rounded font-medium ${{pt.x_cost_diff < 0 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}}">
+                ${{pt.x_cost_diff < 0 ? '🟢 折价击球' : '🔵 适度溢价'}}
+              </span>
+            </div>
+            <div class="space-y-1.5 text-[11px]">
+              <div class="flex justify-between text-gray-300">
+                <span class="text-gray-400">现价 vs 大师成本:</span>
+                <span class="${{diffColor}} font-bold font-mono">${{curStr}} vs ${{costStr}} (${{diffSign}}${{pt.x_cost_diff}}%)</span>
+              </div>
+              <div class="flex justify-between text-gray-300">
+                <span class="text-gray-400">自由现金流收益 (FCF):</span>
+                <span class="text-emerald-400 font-bold font-mono">${{pt.y_fcf_yield}}%</span>
+              </div>
+              <div class="flex justify-between text-gray-300">
+                <span class="text-gray-400">市盈率 P/E (TTM):</span>
+                <span class="text-gray-200 font-mono">${{pt.pe}}x</span>
+              </div>
+              <div class="flex justify-between text-gray-300 pt-1 border-t border-gray-800">
+                <span class="text-gray-400 shrink-0 mr-2">持仓大师:</span>
+                <span class="text-gray-200 text-right truncate max-w-[140px]" title="${{pt.gurus_str}}">${{pt.gurus_str}}</span>
+              </div>
+            </div>
+            <div class="mt-2 text-center text-[10px] text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded py-1 border border-emerald-500/20 font-medium">
+              👉 点击查看 ${{pt.ticker}} 独立档案与均价拆解 ↗
+            </div>
+          `;
+          tooltip.classList.remove('hidden');
+        }});
+
+        link.addEventListener('mouseleave', () => {{
+          circle.setAttribute('r', isMatched ? r + 3 : r);
+          circle.setAttribute('stroke', isMatched ? '#fbbf24' : (isCheap ? '#34d399' : '#60a5fa'));
+          circle.setAttribute('stroke-width', isMatched ? '2.5' : '1.5');
+          if (!shouldShowLabel) {{
+            text.classList.add('hidden');
+          }}
+          text.setAttribute('fill', isMatched ? '#fbbf24' : '#e2e8f0');
+          tooltip.classList.add('hidden');
+        }});
+
+        link.appendChild(circle);
+        link.appendChild(text);
+        scatterGroup.appendChild(link);
       }});
+    }}
 
-      link.addEventListener('mouseleave', () => {{
-        tooltip.classList.add('hidden');
+    function setScatterFilter(filterKey) {{
+      currentScatterFilter = filterKey;
+      const pills = document.querySelectorAll('.scatter-pill');
+      pills.forEach(btn => {{
+        btn.className = 'scatter-pill px-2.5 py-1 rounded-md bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium';
       }});
+      const activeBtn = document.getElementById('sbtn-' + filterKey);
+      if (activeBtn) {{
+        activeBtn.className = 'scatter-pill px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-medium transition-all shadow-sm';
+      }}
+      renderScatter();
+    }}
 
-      link.appendChild(circle);
-      link.appendChild(text);
-      scatterGroup.appendChild(link);
-    }});
+    function onScatterSearch(val) {{
+      currentScatterSearch = val;
+      const clearBtn = document.getElementById('scatterSearchClear');
+      if (clearBtn) {{
+        if (val) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+      }}
+      renderScatter();
+    }}
 
-    // Initialize tables
+    function clearScatterSearch() {{
+      const input = document.getElementById('scatterSearch');
+      if (input) input.value = '';
+      currentScatterSearch = '';
+      const clearBtn = document.getElementById('scatterSearchClear');
+      if (clearBtn) clearBtn.classList.add('hidden');
+      renderScatter();
+    }}
+
+    // Initialize tables & charts
     renderCostTable();
     renderSec13gTable();
+    renderScatter();
   </script>
 </body>
 </html>
