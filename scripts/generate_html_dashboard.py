@@ -1853,37 +1853,36 @@ def generate_html(data: dict) -> str:
 <body class="min-h-screen p-4 md:p-6 lg:p-8 antialiased selection:bg-emerald-500 selection:text-white">
 
   <!-- ── Top Header Navigation Bar ────────────────────────────────────────── -->
-  <header class="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gray-800 pb-6">
+  <header class="max-w-7xl mx-auto mb-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 border-b border-gray-800/80 pb-6">
     <div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3.5">
         <span class="text-3xl">🏛️</span>
         <div>
           <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
             CelebrityStrategy
             <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Terminal v2.7</span>
           </h1>
-          <p class="text-xs md:text-sm text-gray-400 mt-0.5">
+          <p class="text-xs md:text-sm text-gray-400 mt-1">
             顶尖价值投资机构 13F & 13G 变动审计 · 多季度决心积分 · 成本优势击球区雷达
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Right Metadata / Controls -->
-    <div class="flex items-center flex-wrap gap-2 text-xs">
-      <div class="px-3 py-1.5 rounded-lg terminal-card flex items-center gap-2">
-        <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="text-gray-400">报告周期:</span>
-        <span class="font-semibold text-emerald-400 font-mono">{q_label}</span>
+    <!-- Right: Master Investor Insight Philosophy Card -->
+    <div class="terminal-card rounded-xl px-4 py-3 border border-emerald-500/20 bg-gradient-to-r from-gray-900/90 to-emerald-950/20 max-w-xl text-xs w-full lg:w-auto shadow-lg shadow-black/40">
+      <div class="flex items-center justify-between gap-3 mb-1.5 border-b border-gray-800/60 pb-1.5">
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-emerald-400 font-bold tracking-wide">💡 大师洞察策略核心理念</span>
+        </div>
+        <span class="font-mono text-[11px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded border border-gray-700/60 whitespace-nowrap">
+          基准期: {q_label} · 动态行情追踪
+        </span>
       </div>
-      <div class="px-3 py-1.5 rounded-lg terminal-card flex items-center gap-2">
-        <span class="text-gray-400">审计总资产:</span>
-        <span class="font-semibold text-white font-mono">$350.2B+</span>
-      </div>
-      <div class="px-3 py-1.5 rounded-lg terminal-card flex items-center gap-2">
-        <span class="text-gray-400">更新时间:</span>
-        <span class="text-gray-300 font-mono">{now_str}</span>
-      </div>
+      <p class="text-gray-300 leading-relaxed text-[11.5px]">
+        <strong class="text-white">“以低于大师底牌的价格买入伟大企业”</strong>：不看短期股价噪音，聚焦顶级大师（巴菲特/李录/段永平等）<strong>多季度逆势加仓的非共识决心</strong>；当市场出现恐慌错杀让现价落入<strong>大师建仓成本折价区</strong>时，即构筑坚实的安全边际。
+      </p>
     </div>
   </header>
 
