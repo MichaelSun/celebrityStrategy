@@ -1954,49 +1954,55 @@ def generate_html(data: dict) -> str:
       <!-- The Sweet Spot Matrix (Interactive SVG Scatter) -->
       <div class="terminal-card rounded-xl p-5 md:p-6 flex flex-col justify-between w-full">
         <div>
-          <!-- Header & Controls -->
-          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-            <div>
-              <div class="flex items-center gap-2.5">
-                <h2 class="text-base sm:text-lg font-semibold text-white flex items-center gap-2">
-                  🎯 聪明钱“击球区”矩阵（The Sweet Spot Matrix）
-                </h2>
-                <span id="scatterCountBadge" class="text-[11px] px-2.5 py-0.5 bg-gray-800 text-gray-300 border border-gray-700 rounded-full font-mono">
-                  显示 {core_scatter_count} / {all_scatter_count}
-                </span>
-              </div>
-              <p class="text-xs text-gray-400 mt-1">
-                X 轴: 相对建仓成本溢价 (负数越左越便宜) ｜ Y 轴: 自由现金流收益率 (FCF Yield) ↑
-              </p>
+          <!-- ── Header Tier 1: Main Title, Count Badge & Quick Search ── -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 mb-3 border-b border-gray-800/80">
+            <div class="flex items-center gap-3 flex-wrap">
+              <h2 class="text-base sm:text-lg font-bold text-white whitespace-nowrap flex items-center gap-2">
+                🎯 聪明钱“击球区”矩阵（The Sweet Spot Matrix）
+              </h2>
+              <span id="scatterCountBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono whitespace-nowrap">
+                显示 {core_scatter_count} / {all_scatter_count}
+              </span>
             </div>
             
-            <!-- Controls: Filter Pills & Search in one responsive bar -->
-            <div class="flex flex-wrap items-center gap-2">
-              <div class="flex items-center gap-1.5 flex-wrap text-xs" id="scatterFilterPills">
-                <button onclick="setScatterFilter('core')" id="sbtn-core" class="scatter-pill px-2.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-medium transition-all shadow-sm">
-                  🔥 核心重仓 (Top {core_scatter_count})
-                </button>
-                <button onclick="setScatterFilter('golden')" id="sbtn-golden" class="scatter-pill px-2.5 py-1.5 rounded-lg bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
-                  🟢 黄金击球区 ({golden_scatter_count})
-                </button>
-                <button onclick="setScatterFilter('brk')" id="sbtn-brk" class="scatter-pill px-2.5 py-1.5 rounded-lg bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
-                  👑 沃伦·巴菲特 ({brk_scatter_count})
-                </button>
-                <button onclick="setScatterFilter('duan_li')" id="sbtn-duan_li" class="scatter-pill px-2.5 py-1.5 rounded-lg bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
-                  🎯 李录 & 段永平 ({duan_li_scatter_count})
-                </button>
-                <button onclick="setScatterFilter('all')" id="sbtn-all" class="scatter-pill px-2.5 py-1.5 rounded-lg bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium">
-                  🌐 全量标的 ({all_scatter_count})
-                </button>
-              </div>
+            <!-- Quick Search Input (Tier 1 Right) -->
+            <div class="relative w-full sm:w-64">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-xs text-gray-400">🔍</span>
+              <input type="text" id="scatterSearch" placeholder="搜索定位标的 (如 PDD, AAPL)..." 
+                class="w-full text-xs bg-gray-950/90 border border-gray-700/80 rounded-lg pl-8 pr-7 py-1.5 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                oninput="onScatterSearch(this.value)" />
+              <button id="scatterSearchClear" onclick="clearScatterSearch()" class="hidden absolute right-2.5 top-1.5 text-xs text-gray-400 hover:text-white">✕</button>
+            </div>
+          </div>
 
-              <!-- Quick Search Input -->
-              <div class="relative">
-                <input type="text" id="scatterSearch" placeholder="🔍 快速定位标的 (如 PDD, AAPL)..." 
-                  class="text-xs bg-gray-950/80 border border-gray-700/80 rounded-lg px-2.5 py-1.5 pr-7 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 w-44 sm:w-48 transition-all"
-                  oninput="onScatterSearch(this.value)" />
-                <button id="scatterSearchClear" onclick="clearScatterSearch()" class="hidden absolute right-2.5 top-1.5 text-xs text-gray-400 hover:text-white">✕</button>
-              </div>
+          <!-- ── Header Tier 2: Segmented Filter Control & Subtitle ── -->
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-3.5">
+            <!-- Segmented Filter Pills Capsule -->
+            <div class="inline-flex items-center p-1 bg-gray-900/90 border border-gray-800 rounded-xl gap-1 overflow-x-auto max-w-full" id="scatterFilterPills">
+              <button onclick="setScatterFilter('core')" id="sbtn-core" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap">
+                🔥 核心重仓 (Top {core_scatter_count})
+              </button>
+              <button onclick="setScatterFilter('golden')" id="sbtn-golden" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap">
+                🟢 黄金击球区 ({golden_scatter_count})
+              </button>
+              <button onclick="setScatterFilter('brk')" id="sbtn-brk" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap">
+                👑 沃伦·巴菲特 ({brk_scatter_count})
+              </button>
+              <button onclick="setScatterFilter('duan_li')" id="sbtn-duan_li" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap">
+                🎯 李录 & 段永平 ({duan_li_scatter_count})
+              </button>
+              <button onclick="setScatterFilter('all')" id="sbtn-all" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap">
+                🌐 全量标的 ({all_scatter_count})
+              </button>
+            </div>
+
+            <!-- Axis Explanatory Subtitle -->
+            <div class="text-xs text-gray-400 flex items-center gap-2 flex-wrap">
+              <span class="px-2 py-0.5 rounded bg-gray-800/80 border border-gray-700/60 font-mono text-[11px] text-gray-300">X轴</span>
+              <span>相对建仓成本溢价 (负数越左越便宜)</span>
+              <span class="text-gray-600">｜</span>
+              <span class="px-2 py-0.5 rounded bg-gray-800/80 border border-gray-700/60 font-mono text-[11px] text-gray-300">Y轴</span>
+              <span>FCF 自由现金流收益率 ↑</span>
             </div>
           </div>
 
@@ -2938,11 +2944,11 @@ def generate_html(data: dict) -> str:
       currentScatterFilter = filterKey;
       const pills = document.querySelectorAll('.scatter-pill');
       pills.forEach(btn => {{
-        btn.className = 'scatter-pill px-2.5 py-1 rounded-md bg-gray-800/80 text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all font-medium';
+        btn.className = 'scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap';
       }});
       const activeBtn = document.getElementById('sbtn-' + filterKey);
       if (activeBtn) {{
-        activeBtn.className = 'scatter-pill px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-medium transition-all shadow-sm';
+        activeBtn.className = 'scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap';
       }}
       renderScatter();
     }}
