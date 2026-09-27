@@ -1619,6 +1619,18 @@ def generate_html(data: dict) -> str:
         diff_val = round(c["diff_pct"], 1)
         fcf_val = round(c["fcf_yield"], 1)
 
+        # 4 Quadrants classification:
+        if diff_val < 0 and fcf_val >= 4.0:
+            quadrant = "golden"
+        elif diff_val < 0 and fcf_val < 4.0:
+            quadrant = "deep_value"
+        elif diff_val >= 0 and fcf_val >= 4.0:
+            quadrant = "quality_premium"
+        else:
+            quadrant = "watch"
+
+        pe_val = round(c["pe_ttm"], 1) if c.get("pe_ttm") is not None else "—"
+
         scatter_points.append({
             "ticker": t,
             "company_name": clean_company_name(t, c.get("company_name", "")),
@@ -1627,8 +1639,9 @@ def generate_html(data: dict) -> str:
             "weight": round(max_w, 2),
             "current_price": c.get("current_price"),
             "weighted_cost": c.get("weighted_cost"),
-            "pe": c.get("pe_ttm") if c.get("pe_ttm") is not None else "N/A",
+            "pe": pe_val,
             "sector": c.get("sector", "General"),
+            "quadrant": quadrant,
             "is_core": t in core_tickers,
             "is_golden": diff_val < 0,
             "has_brk": "BRK" in guru_codes,
@@ -1638,6 +1651,10 @@ def generate_html(data: dict) -> str:
 
     scatter_json = json.dumps(scatter_points)
     golden_scatter_count = sum(1 for p in scatter_points if p["is_golden"])
+    golden_quad_count = sum(1 for p in scatter_points if p["quadrant"] == "golden")
+    deep_quad_count = sum(1 for p in scatter_points if p["quadrant"] == "deep_value")
+    premium_quad_count = sum(1 for p in scatter_points if p["quadrant"] == "quality_premium")
+    watch_quad_count = sum(1 for p in scatter_points if p["quadrant"] == "watch")
     core_scatter_count = sum(1 for p in scatter_points if p["is_core"])
     brk_scatter_count = sum(1 for p in scatter_points if p["has_brk"])
     duan_li_scatter_count = sum(1 for p in scatter_points if p["has_duan_li"])
@@ -1996,20 +2013,6 @@ def generate_html(data: dict) -> str:
                   🌐 全量标的 ({all_scatter_count})
                 </button>
               </div>
-
-              <!-- Label Density Control (方案 1: 标签显示档位) -->
-              <div class="inline-flex items-center p-1 bg-gray-900/90 border border-gray-800 rounded-xl gap-1 text-xs">
-                <span class="text-gray-500 text-[11px] px-1.5 font-medium whitespace-nowrap">🏷️ 标名:</span>
-                <button onclick="setLabelMode('smart')" id="lbtn-smart" class="label-pill px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap" title="智能清晰展示核心标的与大球内嵌代码">
-                  清晰精选
-                </button>
-                <button onclick="setLabelMode('golden')" id="lbtn-golden" class="label-pill px-2.5 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap" title="显示所有低于大师成本折价标的名称">
-                  黄金区全部
-                </button>
-                <button onclick="setLabelMode('all')" id="lbtn-all" class="label-pill px-2.5 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap" title="显示全量标的公司名称（引线自动避让）">
-                  全量标名
-                </button>
-              </div>
             </div>
 
             <!-- Right: Axis Explanatory Subtitle -->
@@ -2025,18 +2028,22 @@ def generate_html(data: dict) -> str:
           <!-- SVG Scatter Plot Container -->
           <div class="relative w-full h-[360px] md:h-[400px] bg-gray-950/70 rounded-lg p-2 border border-gray-800/80 flex items-center justify-center overflow-hidden">
             <svg id="sweetSpotSvg" viewBox="0 0 960 360" class="w-full h-full overflow-visible">
-              <!-- Quadrant Backgrounds -->
+              <!-- Quadrant Backgrounds (Clickable to switch Quadrant Drawer) -->
               <!-- Q1: Top-Left: Golden Sweet Spot (Cheap + High FCF) -->
-              <rect x="50" y="20" width="430" height="227" fill="rgba(16, 185, 129, 0.08)" rx="4" />
-              <text x="65" y="40" fill="#34d399" font-size="11" font-weight="bold">🟢 黄金击球区 (高安全边际 + 强造血)</text>
+              <rect x="50" y="20" width="430" height="227" fill="rgba(16, 185, 129, 0.08)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('golden')" />
+              <text x="65" y="40" fill="#34d399" font-size="11" font-weight="bold" class="cursor-pointer select-none" onclick="switchQuadrantTab('golden')">🟢 黄金击球区 (高安全边际 + 强造血)</text>
 
               <!-- Q2: Bottom-Left: Deep Value (Cheap + Lower FCF) -->
-              <rect x="50" y="247" width="430" height="63" fill="rgba(59, 130, 246, 0.03)" rx="4" />
-              <text x="65" y="295" fill="#60a5fa" font-size="9.5">🔵 深度折价区 (烟蒂/破发成本/周期低点)</text>
+              <rect x="50" y="247" width="430" height="63" fill="rgba(59, 130, 246, 0.04)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('deep_value')" />
+              <text x="65" y="295" fill="#60a5fa" font-size="9.5" class="cursor-pointer select-none" onclick="switchQuadrantTab('deep_value')">🔵 深度折价区 (烟蒂/破发成本/周期低点)</text>
 
               <!-- Q3: Top-Right: Quality Premium (High FCF + Expensive) -->
-              <rect x="480" y="20" width="430" height="227" fill="rgba(234, 179, 8, 0.03)" rx="4" />
-              <text x="680" y="40" fill="#fbbf24" font-size="10">🟡 核心优质溢价区 (强护城河但偏贵)</text>
+              <rect x="480" y="20" width="430" height="227" fill="rgba(234, 179, 8, 0.04)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('quality_premium')" />
+              <text x="680" y="40" fill="#fbbf24" font-size="10" class="cursor-pointer select-none" onclick="switchQuadrantTab('quality_premium')">🟡 核心优质溢价区 (强护城河但偏贵)</text>
+
+              <!-- Q4: Bottom-Right: Reasonable Watch (Lower FCF + Expensive) -->
+              <rect x="480" y="247" width="430" height="63" fill="rgba(148, 163, 184, 0.03)" rx="4" class="cursor-pointer transition-opacity hover:opacity-80" onclick="switchQuadrantTab('watch')" />
+              <text x="680" y="295" fill="#94a3b8" font-size="9.5" class="cursor-pointer select-none" onclick="switchQuadrantTab('watch')">⚪ 合理观望区 (适度溢价/待催化)</text>
 
               <!-- Axes Lines -->
               <line x1="50" y1="20" x2="50" y2="310" stroke="#374151" stroke-width="1.2" />
@@ -2056,6 +2063,8 @@ def generate_html(data: dict) -> str:
               <text x="485" y="302" fill="#6b7280" font-size="9" font-family="monospace">0% 成本线</text>
               <text x="835" y="242" fill="#6b7280" font-size="9" font-family="monospace">4% 造血基准</text>
 
+              <!-- Dynamic Crosshairs Layer -->
+              <g id="crosshairGroup"></g>
               <!-- Scatter Nodes -->
               <g id="scatterNodes"></g>
             </svg>
@@ -2072,7 +2081,75 @@ def generate_html(data: dict) -> str:
             <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> 溢价筹码 (高于大师成本)</span>
             <span class="text-gray-500">气泡大小 = 持仓权重</span>
           </div>
-          <span class="text-gray-400">💡 悬浮查看测算坐标 · 点击圆点直达公司独立档案</span>
+          <span class="text-gray-400">💡 悬浮圆点即时穿透联动下表明细 · 点击象限标签穿透对应标的池</span>
+        </div>
+
+        <!-- ── Quadrant Drilldown Discovery Drawer (方案 B 象限穿透明细抽屉) ── -->
+        <div id="quadrantDrawerSection" class="mt-4 pt-4 border-t border-gray-800/80">
+          <!-- Top Bar: Quadrant Switcher Tabs & Quick In-Drawer Search / Sort -->
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-3">
+            <!-- 4 Quadrant Selector Pills -->
+            <div class="inline-flex items-center p-1 bg-gray-900/90 border border-gray-800 rounded-xl gap-1 overflow-x-auto max-w-full" id="quadrantTabs">
+              <button onclick="switchQuadrantTab('golden')" id="qtab-golden" class="qtab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap flex items-center gap-1.5">
+                <span>🟢 黄金击球区</span>
+                <span class="px-1.5 py-0.2 rounded-full bg-emerald-500/30 text-[10px] font-mono">{golden_quad_count}</span>
+              </button>
+              <button onclick="switchQuadrantTab('deep_value')" id="qtab-deep_value" class="qtab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap flex items-center gap-1.5">
+                <span>🔵 深度折价区</span>
+                <span class="px-1.5 py-0.2 rounded-full bg-gray-800 text-[10px] font-mono">{deep_quad_count}</span>
+              </button>
+              <button onclick="switchQuadrantTab('quality_premium')" id="qtab-quality_premium" class="qtab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap flex items-center gap-1.5">
+                <span>🟡 优质溢价区</span>
+                <span class="px-1.5 py-0.2 rounded-full bg-gray-800 text-[10px] font-mono">{premium_quad_count}</span>
+              </button>
+              <button onclick="switchQuadrantTab('watch')" id="qtab-watch" class="qtab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap flex items-center gap-1.5">
+                <span>⚪ 合理观望区</span>
+                <span class="px-1.5 py-0.2 rounded-full bg-gray-800 text-[10px] font-mono">{watch_quad_count}</span>
+              </button>
+              <button onclick="switchQuadrantTab('all')" id="qtab-all" class="qtab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap flex items-center gap-1.5">
+                <span>🌐 全部标的</span>
+                <span class="px-1.5 py-0.2 rounded-full bg-gray-800 text-[10px] font-mono">{all_scatter_count}</span>
+              </button>
+            </div>
+
+            <!-- Right Tools: Sort Select & Drawer Filter -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="flex items-center gap-1.5 text-xs text-gray-400 bg-gray-900/80 px-2.5 py-1.5 rounded-lg border border-gray-800">
+                <span class="text-gray-500">排序:</span>
+                <select id="quadrantSortSelect" onchange="onQuadrantSortChange(this.value)" class="bg-transparent text-gray-200 focus:outline-none cursor-pointer text-xs">
+                  <option value="discount_asc" class="bg-gray-900">最便宜优先 (相对成本折价)</option>
+                  <option value="fcf_desc" class="bg-gray-900">自由现金流 (FCF) 优先</option>
+                  <option value="weight_desc" class="bg-gray-900">大师持仓权重优先</option>
+                  <option value="pe_asc" class="bg-gray-900">市盈率 P/E 估值低优先</option>
+                </select>
+              </div>
+
+              <div class="relative">
+                <input type="text" id="drawerFilterInput" placeholder="筛选象限标的/代码/大师..." 
+                  class="text-xs bg-gray-950/90 border border-gray-700/80 rounded-lg pl-7 pr-6 py-1.5 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-all w-48"
+                  oninput="onDrawerFilterInput(this.value)" />
+                <span class="absolute inset-y-0 left-2.5 flex items-center text-[11px] text-gray-500 pointer-events-none">🔍</span>
+                <button id="drawerFilterClear" onclick="clearDrawerFilter()" class="hidden absolute right-2 top-1.5 text-xs text-gray-500 hover:text-white">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Quadrant Philosophy & Interpretation Banner -->
+          <div id="quadrantBanner" class="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/25 text-xs text-gray-300 mb-3 flex items-start gap-2.5">
+            <span id="quadrantBannerIcon" class="text-lg leading-none shrink-0 mt-0.5">🟢</span>
+            <div class="flex-1">
+              <span id="quadrantBannerTitle" class="font-bold text-emerald-400 mr-2 text-xs">黄金击球区（Sweet Spot）</span>
+              <span id="quadrantBannerDesc" class="text-gray-300 text-[11.5px] leading-relaxed">现价低于超级投资人加权建仓成本（具备买底安全边际），且具备 ≥4.0% 自由现金流收益率（内生造血充沛）。最符合“以四毛钱买一美元资产”的黄金配置窗口。</span>
+            </div>
+            <div id="quadrantItemCount" class="text-[11px] text-emerald-400 font-mono font-bold whitespace-nowrap px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              {golden_quad_count} 家标的
+            </div>
+          </div>
+
+          <!-- Drawer Company Cards Grid (Scrollable Container) -->
+          <div id="quadrantCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 max-h-[480px] overflow-y-auto pr-1">
+            <!-- Dynamically injected via JS -->
+          </div>
         </div>
       </div>
     </section>
@@ -2766,16 +2843,58 @@ def generate_html(data: dict) -> str:
       }}
     }}
 
-    // Render Sweet Spot Scatter Plot SVG
+    // ── Sweet Spot Scatter & Quadrant Discovery Drawer System ──
     const scatterData = {scatter_json};
     const scatterGroup = document.getElementById('scatterNodes');
+    const crosshairGroup = document.getElementById('crosshairGroup');
     const tooltip = document.getElementById('chartTooltip');
     const svgEl = document.getElementById('sweetSpotSvg');
 
     let currentScatterFilter = 'core'; // 'core', 'golden', 'brk', 'duan_li', 'all'
     let currentScatterSearch = '';
-    let currentLabelMode = 'smart'; // 'smart', 'golden', 'all'
+    let currentQuadrant = 'golden'; // 'golden', 'deep_value', 'quality_premium', 'watch', 'all'
+    let currentQuadrantSort = 'discount_asc';
+    let currentDrawerFilter = '';
 
+    const quadrantMeta = {{
+      golden: {{
+        name: '黄金击球区（Sweet Spot）',
+        icon: '🟢',
+        titleColor: 'text-emerald-400',
+        bgBorder: 'bg-emerald-950/20 border-emerald-500/25',
+        desc: '现价低于超级投资人加权建仓成本（具备买底安全边际），且具备 ≥4.0% 自由现金流收益率（内生造血充沛）。最符合“以四毛钱买一美元资产”的黄金配置窗口。'
+      }},
+      deep_value: {{
+        name: '深度折价区（Deep Value）',
+        icon: '🔵',
+        titleColor: 'text-blue-400',
+        bgBorder: 'bg-blue-950/20 border-blue-500/25',
+        desc: '现价显著低于大师建仓成本，但当前自由现金流收益率偏低或处于周期低点（如周期性资源、承压资产或烟蒂重估型）。具备较大的均值回归修复弹性。'
+      }},
+      quality_premium: {{
+        name: '核心优质溢价区（Quality Premium）',
+        icon: '🟡',
+        titleColor: 'text-amber-400',
+        bgBorder: 'bg-amber-950/20 border-amber-500/25',
+        desc: '企业具备 ≥4.0% 的极强自由现金流造血与宽阔护城河，但市场给予了溢价定价（现价高于大师历史建仓成本）。适合逢回调建仓或长期复利持有。'
+      }},
+      watch: {{
+        name: '合理观望区（Watchlist）',
+        icon: '⚪',
+        titleColor: 'text-gray-400',
+        bgBorder: 'bg-gray-900/40 border-gray-700/40',
+        desc: '现价高于大师成本且当前自由现金流收益率低于 4.0%。安全边际较薄，建议保持观察跟踪其业绩兑现度与买点机会。'
+      }},
+      all: {{
+        name: '全量 219 家机构持仓标的',
+        icon: '🌐',
+        titleColor: 'text-purple-400',
+        bgBorder: 'bg-purple-950/20 border-purple-500/25',
+        desc: '穿透覆盖李录、段永平、巴菲特等顶级大师的所有美股重仓股，汇集资本加权成本、自由现金流收益与实时相对差价。'
+      }}
+    }};
+
+    // Coordinate mapping
     // Bounds: X [-50, +50] -> [50, 910] (Width: 860, Center 0% at 480)
     // Bounds: Y [-5, +35] -> [310, 30] (Height: 280, 4% line at 247)
     function mapX(costDiff) {{
@@ -2787,11 +2906,141 @@ def generate_html(data: dict) -> str:
       return 310 - ((clamped - (-5)) / 40) * 280;
     }}
 
+    function drawCrosshairs(cx, cy, costDiff, fcfYield) {{
+      if (!crosshairGroup) return;
+      const xClamped = Math.max(50, Math.min(850, cx - 22));
+      const yClamped = Math.max(20, Math.min(295, cy - 7));
+      crosshairGroup.innerHTML = `
+        <line x1="50" y1="${{cy}}" x2="${{cx}}" y2="${{cy}}" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.85" />
+        <line x1="${{cx}}" y1="310" x2="${{cx}}" y2="${{cy}}" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.85" />
+        <rect x="${{xClamped}}" y="313" width="44" height="15" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="0.8" />
+        <text x="${{xClamped + 22}}" y="324" text-anchor="middle" fill="#fbbf24" font-size="8.5" font-family="monospace" font-weight="bold">${{costDiff > 0 ? '+' : ''}}${{costDiff}}%</text>
+        <rect x="16" y="${{yClamped}}" width="30" height="14" rx="3" fill="#111827" stroke="#fbbf24" stroke-width="0.8" />
+        <text x="31" y="${{yClamped + 10}}" text-anchor="middle" fill="#fbbf24" font-size="8" font-family="monospace" font-weight="bold">${{fcfYield}}%</text>
+      `;
+    }}
+
+    function clearCrosshairs() {{
+      if (crosshairGroup) crosshairGroup.innerHTML = '';
+    }}
+
+    function showTooltip(pt, cx, cy) {{
+      if (!tooltip || !svgEl) return;
+      const costStr = (pt.weighted_cost !== null && pt.weighted_cost !== undefined) ? `$${{Number(pt.weighted_cost).toFixed(2)}}` : '—';
+      const curStr = (pt.current_price !== null && pt.current_price !== undefined) ? `$${{Number(pt.current_price).toFixed(2)}}` : '待更新';
+      const diffColor = pt.x_cost_diff < 0 ? 'text-emerald-400' : 'text-amber-400';
+      const diffSign = pt.x_cost_diff > 0 ? '+' : '';
+
+      const rect = svgEl.getBoundingClientRect();
+      const clientX = (cx / 960) * rect.width;
+      const clientY = (cy / 360) * rect.height;
+
+      const tipLeft = clientX > rect.width - 250 ? clientX - 235 : clientX + 15;
+      const tipTop = clientY > rect.height - 180 ? clientY - 145 : clientY - 20;
+
+      tooltip.style.left = `${{Math.max(10, tipLeft)}}px`;
+      tooltip.style.top = `${{Math.max(10, tipTop)}}px`;
+      tooltip.innerHTML = `
+        <div class="flex items-center justify-between gap-2 border-b border-gray-700/80 pb-1.5 mb-2">
+          <div>
+            <span class="font-bold text-white text-sm font-mono">${{pt.ticker}}</span>
+            <span class="text-[11px] text-gray-300 ml-1.5">${{pt.company_name}}</span>
+          </div>
+          <span class="text-[10px] px-1.5 py-0.5 rounded font-medium ${{pt.x_cost_diff < 0 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}}">
+            ${{pt.x_cost_diff < 0 ? '🟢 折价击球' : '🔵 适度溢价'}}
+          </span>
+        </div>
+        <div class="space-y-1.5 text-[11px]">
+          <div class="flex justify-between text-gray-300">
+            <span class="text-gray-400">现价 vs 大师成本:</span>
+            <span class="${{diffColor}} font-bold font-mono">${{curStr}} vs ${{costStr}} (${{diffSign}}${{pt.x_cost_diff}}%)</span>
+          </div>
+          <div class="flex justify-between text-gray-300">
+            <span class="text-gray-400">自由现金流收益 (FCF):</span>
+            <span class="text-emerald-400 font-bold font-mono">${{pt.y_fcf_yield}}%</span>
+          </div>
+          <div class="flex justify-between text-gray-300">
+            <span class="text-gray-400">市盈率 P/E (TTM):</span>
+            <span class="text-gray-200 font-mono">${{pt.pe && pt.pe !== '—' ? pt.pe + 'x' : '—'}}</span>
+          </div>
+          <div class="flex justify-between text-gray-300 pt-1 border-t border-gray-800">
+            <span class="text-gray-400 shrink-0 mr-2">持仓大师:</span>
+            <span class="text-gray-200 text-right truncate max-w-[140px]" title="${{pt.gurus_str}}">${{pt.gurus_str}}</span>
+          </div>
+        </div>
+        <div class="mt-2 text-center text-[10px] text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded py-1 border border-emerald-500/20 font-medium">
+          👉 点击查看 ${{pt.ticker}} 独立档案与均价拆解 ↗
+        </div>
+      `;
+      tooltip.classList.remove('hidden');
+    }}
+
+    function hideTooltip() {{
+      if (tooltip) tooltip.classList.add('hidden');
+    }}
+
+    function highlightDrawerCard(ticker) {{
+      document.querySelectorAll('.quadrant-card').forEach(c => {{
+        c.classList.remove('ring-2', 'ring-emerald-400', 'bg-emerald-950/40', 'border-emerald-400');
+      }});
+      const card = document.querySelector(`.quadrant-card[data-ticker="${{ticker}}"]`);
+      if (card) {{
+        card.classList.add('ring-2', 'ring-emerald-400', 'bg-emerald-950/40', 'border-emerald-400');
+        card.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+      }}
+    }}
+
+    function unhighlightDrawerCards() {{
+      document.querySelectorAll('.quadrant-card').forEach(c => {{
+        c.classList.remove('ring-2', 'ring-emerald-400', 'bg-emerald-950/40', 'border-emerald-400');
+      }});
+    }}
+
+    function highlightScatterBubble(ticker) {{
+      const pt = scatterData.find(p => p.ticker === ticker);
+      if (!pt) return;
+      const circle = document.getElementById('scatter-circle-' + ticker);
+      const ring = document.getElementById('scatter-pulse-' + ticker);
+      const cx = mapX(pt.x_cost_diff);
+      const cy = mapY(pt.y_fcf_yield);
+      const r = Math.max(5, Math.min(16, Math.sqrt(pt.weight || 1) * 3));
+
+      if (circle) {{
+        circle.setAttribute('r', r + 4);
+        circle.setAttribute('stroke', '#fbbf24');
+        circle.setAttribute('stroke-width', '2.5');
+      }}
+      if (ring) {{
+        ring.classList.remove('hidden');
+      }}
+      drawCrosshairs(cx, cy, pt.x_cost_diff, pt.y_fcf_yield);
+      showTooltip(pt, cx, cy);
+    }}
+
+    function unhighlightScatterBubble(ticker) {{
+      const pt = scatterData.find(p => p.ticker === ticker);
+      if (!pt) return;
+      const circle = document.getElementById('scatter-circle-' + ticker);
+      const ring = document.getElementById('scatter-pulse-' + ticker);
+      const r = Math.max(5, Math.min(16, Math.sqrt(pt.weight || 1) * 3));
+      const isCheap = pt.x_cost_diff < 0;
+
+      if (circle) {{
+        circle.setAttribute('r', r);
+        circle.setAttribute('stroke', isCheap ? '#34d399' : '#60a5fa');
+        circle.setAttribute('stroke-width', '1.5');
+      }}
+      if (ring && !ring.getAttribute('data-search-matched')) {{
+        ring.classList.add('hidden');
+      }}
+      clearCrosshairs();
+      hideTooltip();
+    }}
+
     function renderScatter() {{
       if (!scatterGroup) return;
       scatterGroup.innerHTML = '';
 
-      // 1. Filter by current active tab/filter
       let filtered = scatterData;
       if (currentScatterFilter === 'core') {{
         filtered = filtered.filter(p => p.is_core);
@@ -2803,30 +3052,24 @@ def generate_html(data: dict) -> str:
         filtered = filtered.filter(p => p.has_duan_li);
       }}
 
-      // 2. Filter or highlight by search query
       const searchQ = (currentScatterSearch || '').trim().toLowerCase();
       let matchedTickers = new Set();
       if (searchQ) {{
         filtered = filtered.filter(p => {{
           const m = p.ticker.toLowerCase().includes(searchQ) || 
-                    (p.company_name && p.company_name.toLowerCase().includes(searchQ));
+                    (p.company_name && p.company_name.toLowerCase().includes(searchQ)) ||
+                    (p.gurus_str && p.gurus_str.toLowerCase().includes(searchQ));
           if (m) matchedTickers.add(p.ticker);
           return m;
         }});
       }}
 
-      // Update count badge
       const countBadge = document.getElementById('scatterCountBadge');
       if (countBadge) {{
         countBadge.textContent = `显示 ${{filtered.length}} / ${{scatterData.length}}`;
       }}
 
-      // Sort points so larger bubbles are drawn first (smaller on top for easy clicking)
       const sortedPoints = [...filtered].sort((a, b) => (b.weight || 0) - (a.weight || 0));
-
-      // Determine candidate set for smart mode
-      const topLabelSet = new Set(sortedPoints.slice(0, 25).map(p => p.ticker));
-      const placedLabels = [];
 
       sortedPoints.forEach(pt => {{
         const cx = mapX(pt.x_cost_diff);
@@ -2836,13 +3079,13 @@ def generate_html(data: dict) -> str:
         const isMatched = searchQ && matchedTickers.has(pt.ticker);
         const isBigBubble = r >= 9.5;
 
-        // Wrap in link to company page!
         const link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
         link.setAttribute('href', `companies/${{pt.ticker}}.html`);
         link.setAttribute('class', 'group cursor-pointer');
 
         // Circle node
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('id', `scatter-circle-${{pt.ticker}}`);
         circle.setAttribute('cx', cx);
         circle.setAttribute('cy', cy);
         circle.setAttribute('r', isMatched ? r + 3 : r);
@@ -2853,19 +3096,23 @@ def generate_html(data: dict) -> str:
         circle.setAttribute('class', 'transition-all duration-200');
         link.appendChild(circle);
 
-        // Highlight ring if matched search
+        // Highlight ring
+        const pulseRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        pulseRing.setAttribute('id', `scatter-pulse-${{pt.ticker}}`);
+        pulseRing.setAttribute('cx', cx);
+        pulseRing.setAttribute('cy', cy);
+        pulseRing.setAttribute('r', r + 6);
+        pulseRing.setAttribute('fill', 'none');
+        pulseRing.setAttribute('stroke', '#fbbf24');
+        pulseRing.setAttribute('stroke-width', '1.5');
+        pulseRing.setAttribute('stroke-dasharray', '3,3');
+        pulseRing.setAttribute('opacity', '0.85');
         if (isMatched) {{
-          const pulseRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          pulseRing.setAttribute('cx', cx);
-          pulseRing.setAttribute('cy', cy);
-          pulseRing.setAttribute('r', r + 6);
-          pulseRing.setAttribute('fill', 'none');
-          pulseRing.setAttribute('stroke', '#fbbf24');
-          pulseRing.setAttribute('stroke-width', '1.5');
-          pulseRing.setAttribute('stroke-dasharray', '3,3');
-          pulseRing.setAttribute('opacity', '0.85');
-          link.appendChild(pulseRing);
+          pulseRing.setAttribute('data-search-matched', 'true');
+        }} else {{
+          pulseRing.setAttribute('class', 'hidden');
         }}
+        link.appendChild(pulseRing);
 
         // Big bubble inner ticker text (内嵌代码)
         if (isBigBubble) {{
@@ -2883,154 +3130,194 @@ def generate_html(data: dict) -> str:
           link.appendChild(innerText);
         }}
 
-        // Determine if external label should be shown
-        let shouldShowLabel = false;
-        if (isMatched) {{
-          shouldShowLabel = true;
-        }} else if (currentLabelMode === 'all') {{
-          shouldShowLabel = true;
-        }} else if (currentLabelMode === 'golden') {{
-          shouldShowLabel = isCheap || topLabelSet.has(pt.ticker);
-        }} else {{
-          // 'smart' mode: show labels for top 25 or small set (<= 35)
-          shouldShowLabel = filtered.length <= 35 || topLabelSet.has(pt.ticker);
-        }}
-
-        // If big bubble already has inner text, only show external text if searched or hovered
-        if (isBigBubble && !isMatched && currentLabelMode !== 'all') {{
-          shouldShowLabel = false;
-        }}
-
-        // Position external label: flip to left if near right border (cx > 780)
-        const isNearRightBorder = cx > 780;
-        const baseLabelX = isNearRightBorder ? (cx - r - 5) : (cx + r + 5);
-        const textAnchor = isNearRightBorder ? 'end' : 'start';
-
-        let labelY = cy + 3.5;
-        let labelX = baseLabelX;
-        let leaderLine = null;
-
-        if (shouldShowLabel) {{
-          // Stagger against previously placed labels in proximity
-          for (let placed of placedLabels) {{
-            if (Math.abs(placed.x - labelX) < 45 && Math.abs(placed.y - labelY) < 11.5) {{
-              const shift = labelY >= placed.y ? 11.5 : -11.5;
-              labelY += shift;
-              if (Math.abs(labelY - (cy + 3.5)) >= 8) {{
-                leaderLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                leaderLine.setAttribute('x1', cx);
-                leaderLine.setAttribute('y1', cy);
-                leaderLine.setAttribute('x2', isNearRightBorder ? labelX + 2 : labelX - 2);
-                leaderLine.setAttribute('y2', labelY - 2);
-                leaderLine.setAttribute('stroke', '#64748b');
-                leaderLine.setAttribute('stroke-width', '0.75');
-                leaderLine.setAttribute('stroke-dasharray', '2,2');
-                leaderLine.setAttribute('opacity', '0.6');
-              }}
-            }}
-          }}
-          placedLabels.push({{ x: labelX, y: labelY }});
-        }}
-
-        if (leaderLine) {{
-          link.appendChild(leaderLine);
-        }}
-
-        // External text label
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', labelX);
-        text.setAttribute('y', labelY);
-        text.setAttribute('text-anchor', textAnchor);
-        text.setAttribute('fill', isMatched ? '#fbbf24' : '#e2e8f0');
-        text.setAttribute('font-size', isMatched ? '11' : '9.5');
-        text.setAttribute('font-family', 'ui-monospace, monospace');
-        text.setAttribute('font-weight', 'bold');
-        text.setAttribute('class', shouldShowLabel ? 'transition-colors select-none' : 'hidden transition-colors select-none');
-        text.textContent = pt.ticker;
-        link.appendChild(text);
-
         // Hover events
-        link.addEventListener('mouseenter', (e) => {{
+        link.addEventListener('mouseenter', () => {{
           circle.setAttribute('r', isMatched ? r + 5 : r + 3.5);
           circle.setAttribute('stroke', '#ffffff');
           circle.setAttribute('stroke-width', '2.5');
-          text.classList.remove('hidden');
-          text.setAttribute('fill', '#ffffff');
-          if (leaderLine) {{
-            leaderLine.setAttribute('stroke', '#34d399');
-            leaderLine.setAttribute('opacity', '1');
-          }}
-
-          const costStr = pt.weighted_cost ? `$${{Number(pt.weighted_cost).toFixed(2)}}` : '—';
-          const curStr = pt.current_price ? `$${{Number(pt.current_price).toFixed(2)}}` : '—';
-          const diffColor = pt.x_cost_diff < 0 ? 'text-emerald-400' : 'text-amber-400';
-          const diffSign = pt.x_cost_diff > 0 ? '+' : '';
-
-          // Calculate container relative coordinates
-          const rect = svgEl.getBoundingClientRect();
-          const svgWidth = 960;
-          const svgHeight = 360;
-          const clientX = (cx / svgWidth) * rect.width;
-          const clientY = (cy / svgHeight) * rect.height;
-
-          // Prevent tooltip from overflowing right or bottom
-          const tipLeft = clientX > rect.width - 240 ? clientX - 220 : clientX + 15;
-          const tipTop = clientY > rect.height - 180 ? clientY - 140 : clientY - 20;
-
-          tooltip.style.left = `${{Math.max(10, tipLeft)}}px`;
-          tooltip.style.top = `${{Math.max(10, tipTop)}}px`;
-          tooltip.innerHTML = `
-            <div class="flex items-center justify-between gap-2 border-b border-gray-700/80 pb-1.5 mb-2">
-              <div>
-                <span class="font-bold text-white text-sm font-mono">${{pt.ticker}}</span>
-                <span class="text-[11px] text-gray-400 ml-1.5">${{pt.company_name}}</span>
-              </div>
-              <span class="text-[10px] px-1.5 py-0.5 rounded font-medium ${{pt.x_cost_diff < 0 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}}">
-                ${{pt.x_cost_diff < 0 ? '🟢 折价击球' : '🔵 适度溢价'}}
-              </span>
-            </div>
-            <div class="space-y-1.5 text-[11px]">
-              <div class="flex justify-between text-gray-300">
-                <span class="text-gray-400">现价 vs 大师成本:</span>
-                <span class="${{diffColor}} font-bold font-mono">${{curStr}} vs ${{costStr}} (${{diffSign}}${{pt.x_cost_diff}}%)</span>
-              </div>
-              <div class="flex justify-between text-gray-300">
-                <span class="text-gray-400">自由现金流收益 (FCF):</span>
-                <span class="text-emerald-400 font-bold font-mono">${{pt.y_fcf_yield}}%</span>
-              </div>
-              <div class="flex justify-between text-gray-300">
-                <span class="text-gray-400">市盈率 P/E (TTM):</span>
-                <span class="text-gray-200 font-mono">${{pt.pe}}x</span>
-              </div>
-              <div class="flex justify-between text-gray-300 pt-1 border-t border-gray-800">
-                <span class="text-gray-400 shrink-0 mr-2">持仓大师:</span>
-                <span class="text-gray-200 text-right truncate max-w-[140px]" title="${{pt.gurus_str}}">${{pt.gurus_str}}</span>
-              </div>
-            </div>
-            <div class="mt-2 text-center text-[10px] text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded py-1 border border-emerald-500/20 font-medium">
-              👉 点击查看 ${{pt.ticker}} 独立档案与均价拆解 ↗
-            </div>
-          `;
-          tooltip.classList.remove('hidden');
+          drawCrosshairs(cx, cy, pt.x_cost_diff, pt.y_fcf_yield);
+          showTooltip(pt, cx, cy);
+          highlightDrawerCard(pt.ticker);
         }});
 
         link.addEventListener('mouseleave', () => {{
           circle.setAttribute('r', isMatched ? r + 3 : r);
           circle.setAttribute('stroke', isMatched ? '#fbbf24' : (isCheap ? '#34d399' : '#60a5fa'));
           circle.setAttribute('stroke-width', isMatched ? '2.5' : '1.5');
-          if (!shouldShowLabel) {{
-            text.classList.add('hidden');
-          }}
-          text.setAttribute('fill', isMatched ? '#fbbf24' : '#e2e8f0');
-          if (leaderLine) {{
-            leaderLine.setAttribute('stroke', '#64748b');
-            leaderLine.setAttribute('opacity', '0.6');
-          }}
-          tooltip.classList.add('hidden');
+          clearCrosshairs();
+          hideTooltip();
+          unhighlightDrawerCards();
         }});
 
         scatterGroup.appendChild(link);
       }});
+    }}
+
+    // Quadrant Discovery Drawer Implementation
+    function renderQuadrantDrawer() {{
+      const container = document.getElementById('quadrantCardsContainer');
+      const countEl = document.getElementById('quadrantItemCount');
+      if (!container) return;
+
+      let list = scatterData;
+      if (currentQuadrant !== 'all') {{
+        list = list.filter(p => p.quadrant === currentQuadrant);
+      }}
+
+      const filterVal = (currentDrawerFilter || '').trim().toLowerCase();
+      if (filterVal) {{
+        list = list.filter(p => {{
+          return p.ticker.toLowerCase().includes(filterVal) ||
+                 (p.company_name && p.company_name.toLowerCase().includes(filterVal)) ||
+                 (p.gurus_str && p.gurus_str.toLowerCase().includes(filterVal));
+        }});
+      }}
+
+      // Sorting
+      if (currentQuadrantSort === 'discount_asc') {{
+        list.sort((a, b) => a.x_cost_diff - b.x_cost_diff);
+      }} else if (currentQuadrantSort === 'fcf_desc') {{
+        list.sort((a, b) => b.y_fcf_yield - a.y_fcf_yield);
+      }} else if (currentQuadrantSort === 'weight_desc') {{
+        list.sort((a, b) => (b.weight || 0) - (a.weight || 0));
+      }} else if (currentQuadrantSort === 'pe_asc') {{
+        list.sort((a, b) => {{
+          const peA = (a.pe && a.pe !== '—') ? Number(a.pe) : 999;
+          const peB = (b.pe && b.pe !== '—') ? Number(b.pe) : 999;
+          return peA - peB;
+        }});
+      }}
+
+      if (countEl) {{
+        countEl.textContent = `${{list.length}} 家标的`;
+      }}
+
+      if (list.length === 0) {{
+        container.innerHTML = `
+          <div class="col-span-full py-8 text-center text-gray-500 text-xs">
+            未找到符合筛选条件的标的公司
+          </div>
+        `;
+        return;
+      }}
+
+      container.innerHTML = list.map(pt => {{
+        const isCheap = pt.x_cost_diff < 0;
+        const curPrice = (pt.current_price !== null && pt.current_price !== undefined) ? `$${{Number(pt.current_price).toFixed(2)}}` : '待更新';
+        const costPrice = (pt.weighted_cost !== null && pt.weighted_cost !== undefined) ? `$${{Number(pt.weighted_cost).toFixed(2)}}` : '—';
+        const badgeClass = isCheap ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+        const diffText = isCheap ? `${{pt.x_cost_diff}}% 折价` : `+${{pt.x_cost_diff}}% 溢价`;
+        const peStr = (pt.pe && pt.pe !== '—') ? `${{pt.pe}}x` : '—';
+
+        return `
+          <div class="quadrant-card group relative p-3 rounded-xl bg-gray-900/85 hover:bg-gray-800/80 border border-gray-800 hover:border-emerald-500/50 transition-all duration-150 flex flex-col justify-between shadow-sm cursor-pointer"
+               data-ticker="${{pt.ticker}}"
+               onmouseenter="highlightScatterBubble('${{pt.ticker}}')"
+               onmouseleave="unhighlightScatterBubble('${{pt.ticker}}')"
+               onclick="window.location.href='companies/${{pt.ticker}}.html'">
+            <div>
+              <!-- Top Row: Ticker, Name, Badge -->
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="font-mono font-bold text-white text-sm group-hover:text-emerald-400 transition-colors">${{pt.ticker}}</span>
+                  <span class="text-xs text-gray-300 truncate max-w-[110px] font-medium" title="${{pt.company_name}}">${{pt.company_name}}</span>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold ${{badgeClass}} shrink-0">
+                  ${{diffText}}
+                </span>
+              </div>
+
+              <!-- Pricing Row: Current vs Weighted Cost -->
+              <div class="flex items-center justify-between text-[11px] text-gray-400 mb-1.5 pb-1.5 border-b border-gray-800/80">
+                <span>现价 <b class="text-white font-mono">${{curPrice}}</b></span>
+                <span>成本 <a href="companies/${{pt.ticker}}_cost.html" onclick="event.stopPropagation()" class="text-emerald-400 hover:underline font-mono" title="查看大师历史建仓成本推导">${{costPrice}}</a></span>
+              </div>
+
+              <!-- Financial Ratios Mini Grid -->
+              <div class="grid grid-cols-3 gap-1 text-[10px] text-center mb-2">
+                <div class="bg-gray-950/60 p-1 rounded border border-gray-800/60">
+                  <div class="text-gray-500">FCF收益</div>
+                  <div class="font-bold text-emerald-400 font-mono">${{pt.y_fcf_yield}}%</div>
+                </div>
+                <div class="bg-gray-950/60 p-1 rounded border border-gray-800/60">
+                  <div class="text-gray-500">市盈率 P/E</div>
+                  <div class="font-medium text-gray-200 font-mono">${{peStr}}</div>
+                </div>
+                <div class="bg-gray-950/60 p-1 rounded border border-gray-800/60">
+                  <div class="text-gray-500">大师权重</div>
+                  <div class="font-medium text-amber-400 font-mono">${{pt.weight}}%</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Row: Guru Chips & Quick Links -->
+            <div class="flex items-center justify-between text-[10px] text-gray-400 pt-1 border-t border-gray-800/60">
+              <div class="truncate max-w-[130px] text-gray-400" title="${{pt.gurus_str}}">
+                🏛️ ${{pt.gurus_str}}
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <a href="companies/${{pt.ticker}}_cost.html" onclick="event.stopPropagation()" class="text-gray-400 hover:text-emerald-400 transition-colors" title="建仓均价推导">成本↗</a>
+                <a href="companies/${{pt.ticker}}.html" onclick="event.stopPropagation()" class="text-emerald-400 hover:text-emerald-300 font-medium">档案 ↗</a>
+              </div>
+            </div>
+          </div>
+        `;
+      }}).join('');
+    }}
+
+    function switchQuadrantTab(quadrantKey) {{
+      currentQuadrant = quadrantKey;
+      const meta = quadrantMeta[quadrantKey] || quadrantMeta.all;
+
+      // Update button pills
+      document.querySelectorAll('.qtab-btn').forEach(btn => {{
+        btn.className = 'qtab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap flex items-center gap-1.5';
+      }});
+      const activeBtn = document.getElementById('qtab-' + quadrantKey);
+      if (activeBtn) {{
+        activeBtn.className = 'qtab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap flex items-center gap-1.5';
+      }}
+
+      // Update Banner
+      const banner = document.getElementById('quadrantBanner');
+      const icon = document.getElementById('quadrantBannerIcon');
+      const title = document.getElementById('quadrantBannerTitle');
+      const desc = document.getElementById('quadrantBannerDesc');
+      if (banner && meta) {{
+        banner.className = `p-3 rounded-xl ${{meta.bgBorder}} text-xs text-gray-300 mb-3 flex items-start gap-2.5`;
+        if (icon) icon.textContent = meta.icon;
+        if (title) {{
+          title.className = `font-bold ${{meta.titleColor}} mr-2 text-xs`;
+          title.textContent = meta.name;
+        }}
+        if (desc) desc.textContent = meta.desc;
+      }}
+
+      renderQuadrantDrawer();
+    }}
+
+    function onQuadrantSortChange(val) {{
+      currentQuadrantSort = val;
+      renderQuadrantDrawer();
+    }}
+
+    function onDrawerFilterInput(val) {{
+      currentDrawerFilter = val;
+      const clearBtn = document.getElementById('drawerFilterClear');
+      if (clearBtn) {{
+        if (val) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+      }}
+      renderQuadrantDrawer();
+    }}
+
+    function clearDrawerFilter() {{
+      const input = document.getElementById('drawerFilterInput');
+      if (input) input.value = '';
+      currentDrawerFilter = '';
+      const clearBtn = document.getElementById('drawerFilterClear');
+      if (clearBtn) clearBtn.classList.add('hidden');
+      renderQuadrantDrawer();
     }}
 
     function setScatterFilter(filterKey) {{
@@ -3042,18 +3329,6 @@ def generate_html(data: dict) -> str:
       const activeBtn = document.getElementById('sbtn-' + filterKey);
       if (activeBtn) {{
         activeBtn.className = 'scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap';
-      }}
-      renderScatter();
-    }}
-
-    function setLabelMode(mode) {{
-      currentLabelMode = mode;
-      document.querySelectorAll('.label-pill').forEach(btn => {{
-        btn.className = 'label-pill px-2.5 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap';
-      }});
-      const activeBtn = document.getElementById('lbtn-' + mode);
-      if (activeBtn) {{
-        activeBtn.className = 'label-pill px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap';
       }}
       renderScatter();
     }}
@@ -3081,6 +3356,7 @@ def generate_html(data: dict) -> str:
     renderCostTable();
     renderSec13gTable();
     renderScatter();
+    renderQuadrantDrawer();
   </script>
 </body>
 </html>
