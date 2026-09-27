@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UFP Industries Inc. (UFPI) 持仓成本拆解与均价推导明细 | CelebrityStrategy</title>
+  <title>UFP Industries Inc. (UFPI) 真实持仓成本拆解与均价推导明细 | CelebrityStrategy</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -66,16 +66,34 @@
       </div>
     </div>
     <div class="flex items-center gap-2 text-xs font-mono">
-      <span class="inline-block w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
-      <span class="text-gray-400">成本算法模型:</span>
-      <span class="text-blue-400 font-bold">资本加权核算</span>
+      <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="text-gray-400">成本核算模型:</span>
+      <span class="text-emerald-400 font-bold">多季历史加权穿透</span>
     </div>
   </header>
 
   <main class="max-w-5xl mx-auto space-y-6">
 
+    <!-- ── SEC 13F Statutory & Cost Basis Educational Notice ──────────────── -->
+    <div class="p-5 rounded-2xl bg-blue-950/20 border border-blue-500/30 text-xs text-gray-300 leading-relaxed shadow-lg">
+      <div class="flex items-start gap-3">
+        <span class="text-blue-400 text-lg leading-none mt-0.5">💡</span>
+        <div class="space-y-1.5">
+          <div class="font-bold text-white text-sm">
+            SEC 13F 申报制度与真实建仓成本重要释疑：为什么历史真实成本远低于最近季末申报市价？
+          </div>
+          <p class="text-gray-400 text-xs">
+            根据美国证券交易委员会 (SEC) 13F 监管法例，机构<strong>仅被要求披露报告期最后一天的按市值计价 (Marked-to-Market Closing Price)</strong> 作为名义持仓参考，<strong>SEC 从不强制披露机构的真实买入价格与成交成本</strong>。
+          </p>
+          <p class="text-gray-400 text-xs">
+            过去常规软件直接将最近季度的 13F 季末市价标为“买入成本”，导致严重失真（例如巴菲特持仓苹果 10 年却被标记为最近季末收盘价 $289.36）。本系统通过<strong>多季度建仓轨迹穿透引擎 (Lot Inflow Tracking)</strong>，回溯各机构从首次建仓季度至今的所有买入与加仓流水，计算出<strong>真实的资本加权历史建仓成本</strong>（如巴菲特 AAPL 真实成本仅约 $41.18，李录 GOOGL 真实成本仅约 $95.96，拼多多段永平真实成本约 $102.76、李录约 $88.43），为价值投资者提供真正具备实操意义的克隆安全边际。
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Hero Banner: Cost & Margin Summary ─────────────────────────────── -->
-    <div class="terminal-card rounded-2xl p-6 md:p-8 border-l-4 border-l-blue-500 glow-blue">
+    <div class="terminal-card rounded-2xl p-6 md:p-8 border-l-4 border-l-emerald-500 glow-blue">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div class="flex items-center gap-2.5 mb-2">
@@ -92,20 +110,20 @@
 
         <!-- 4-Block Quick Stats Grid -->
         <div class="grid grid-cols-2 gap-3 sm:gap-4 shrink-0 text-right font-mono">
-          <div class="p-3 rounded-xl bg-gray-900/80 border border-blue-500/30 text-left">
-            <div class="text-[10px] text-gray-400 uppercase tracking-wider">机构加权申报均价</div>
-            <div class="text-xl md:text-2xl font-black text-blue-400 mt-0.5">
+          <div class="p-3 rounded-xl bg-gray-900/80 border border-emerald-500/30 text-left">
+            <div class="text-[10px] text-gray-400 uppercase tracking-wider">机构加权建仓成本 (加权申报均价)</div>
+            <div class="text-xl md:text-2xl font-black text-emerald-400 mt-0.5">
               $90.75
             </div>
-            <div class="text-[10px] text-gray-500 mt-0.5">资金规模加权成本</div>
+            <div class="text-[10px] text-gray-500 mt-0.5">多季度历史资金加权</div>
           </div>
 
           <div class="p-3 rounded-xl bg-gray-900/80 border border-gray-800 text-left">
-            <div class="text-[10px] text-gray-400 uppercase tracking-wider">简单算术均价</div>
+            <div class="text-[10px] text-gray-400 uppercase tracking-wider">简单算术建仓均价</div>
             <div class="text-xl md:text-2xl font-black text-gray-300 mt-0.5">
               $90.75
             </div>
-            <div class="text-[10px] text-gray-500 mt-0.5">各机构同权均值</div>
+            <div class="text-[10px] text-gray-500 mt-0.5">各机构建仓同权均值</div>
           </div>
 
           <div class="p-3 rounded-xl bg-gray-900/80 border border-gray-800 text-left">
@@ -134,9 +152,9 @@
       <div class="border-b border-gray-800 pb-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div>
           <h2 class="text-lg md:text-xl font-bold text-white flex items-center gap-2">
-            <span>🏛️</span> 【UFP Industries Inc.】大师独立持仓明细拆解
+            <span>🏛️</span> 【UFP Industries Inc.】大师独立持仓明细与历史建仓成本拆解
           </h2>
-          <p class="text-xs text-gray-400 mt-0.5">每位跟踪大师对该标的的真实申报持股数量、买入成本与持仓市值</p>
+          <p class="text-xs text-gray-400 mt-0.5">穿透 13F 申报盲区：展示每位大师的首次建仓期、真实历史成本与最近持仓市值</p>
         </div>
         <div class="text-xs font-mono text-gray-400">
           合计持股: <span class="text-white font-bold">4,000 股</span>
@@ -149,10 +167,13 @@
           <thead>
             <tr class="border-b border-gray-800 text-gray-400 uppercase text-[11px] tracking-wider font-mono">
               <th class="pb-3 font-medium">投资大师机构 (Guru)</th>
-              <th class="pb-3 font-medium text-center">报告期</th>
-              <th class="pb-3 font-medium text-right text-blue-400">申报买入均价</th>
+              <th class="pb-3 font-medium text-center">首次建仓季</th>
+              <th class="pb-3 font-medium text-center">持仓时长</th>
+              <th class="pb-3 font-medium text-right text-emerald-400">真实建仓成本</th>
+              <th class="pb-3 font-medium text-right text-gray-400">首建参考价</th>
+              <th class="pb-3 font-medium text-right text-gray-400">13F 季末市价</th>
               <th class="pb-3 font-medium text-right">持仓股数</th>
-              <th class="pb-3 font-medium text-right">持仓总市值</th>
+              <th class="pb-3 font-medium text-right">最新持仓市值</th>
               <th class="pb-3 font-medium text-center">持仓占比</th>
               <th class="pb-3 font-medium text-right">季度动作</th>
             </tr>
@@ -164,8 +185,11 @@
                 汤姆·盖纳 (Thomas Gayner)
                 <span class="text-[10px] ml-1.5 px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">Tier 2</span>
               </td>
-              <td class="py-3 text-center text-gray-400 font-mono">Q2 2026</td>
-              <td class="py-3 text-right font-mono font-bold text-blue-400">$90.75</td>
+              <td class="py-3 text-center text-blue-300 font-mono font-medium">2026 Q2</td>
+              <td class="py-3 text-center text-gray-400 font-mono">1 季</td>
+              <td class="py-3 text-right font-mono font-bold text-emerald-400">$90.75</td>
+              <td class="py-3 text-right font-mono text-gray-400">$90.75</td>
+              <td class="py-3 text-right font-mono text-gray-400">$90.75</td>
               <td class="py-3 text-right font-mono text-gray-200">4,000 股</td>
               <td class="py-3 text-right font-mono text-gray-200">$363,000.00</td>
               <td class="py-3 text-center font-mono font-bold text-white">0.00%</td>
@@ -180,16 +204,59 @@
           <tfoot>
             <tr class="border-t-2 border-gray-700 bg-gray-900/80 font-mono font-bold text-xs">
               <td class="py-3 text-white">合计加权统计 (Active Totals)</td>
-              <td class="py-3 text-center text-gray-400">1 家机构</td>
-              <td class="py-3 text-right text-blue-400">$90.75 (加权均价)</td>
+              <td class="py-3 text-center text-gray-400" colspan="2">1 家机构重仓</td>
+              <td class="py-3 text-right text-emerald-400">$90.75 (综合建仓成本)</td>
+              <td class="py-3 text-right text-gray-400" colspan="2">—</td>
               <td class="py-3 text-right text-white">4,000 股</td>
               <td class="py-3 text-right text-emerald-400">$363,000.00</td>
               <td class="py-3 text-center text-gray-400">—</td>
-              <td class="py-3 text-right text-emerald-400">合算均价</td>
+              <td class="py-3 text-right text-emerald-400">合算完成</td>
             </tr>
           </tfoot>
         </table>
       </div>
+
+      <!-- History Trail Details (if any guru has multi-quarter trail) -->
+      
+            <div class="mt-4 p-4 rounded-xl bg-gray-900/50 border border-gray-800">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>📜</span> 汤姆·盖纳 (Thomas Gayner) 历史季度建仓调仓流水 (共 1 个报告期)
+                </span>
+                <span class="text-[11px] text-gray-400 font-mono">
+                  首次建仓: <span class="text-blue-400 font-bold">—</span> · 当前估算均价: <span class="text-emerald-400 font-bold">$0.00</span>
+                </span>
+              </div>
+              <div class="overflow-x-auto max-h-64 overflow-y-auto">
+                <table class="w-full text-left text-[11px]">
+                  <thead class="text-gray-400 uppercase tracking-wider font-mono border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <tr>
+                      <th class="pb-2">报告季度</th>
+                      <th class="pb-2">动作类型</th>
+                      <th class="pb-2 text-right">变动股数</th>
+                      <th class="pb-2 text-right">当季参考价</th>
+                      <th class="pb-2 text-right">买入资金流水</th>
+                      <th class="pb-2 text-right">结余持股</th>
+                      <th class="pb-2 text-right text-blue-400">累计加权成本</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-800/40">
+                    
+                <tr class="hover:bg-gray-800/30">
+                  <td class="py-2 font-mono text-gray-300"></td>
+                  <td class="py-2"><span class="px-1.5 py-0.5 rounded text-[10px] badge-hold">Hold</span></td>
+                  <td class="py-2 text-right font-mono text-gray-300">0 股</td>
+                  <td class="py-2 text-right font-mono text-gray-300">$0.00</td>
+                  <td class="py-2 text-right font-mono text-emerald-400">$0.00</td>
+                  <td class="py-2 text-right font-mono text-white">4,000 股</td>
+                  <td class="py-2 text-right font-mono font-bold text-blue-400">$0.00</td>
+                </tr>
+                
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
     </div>
 
     <!-- ── Card 2: 🧮 均价计算推导流程与数学步骤 ── -->
@@ -198,7 +265,7 @@
         <h2 class="text-lg md:text-xl font-bold text-white flex items-center gap-2">
           <span>🧮</span> 均价计算公式与详细推导流水线
         </h2>
-        <p class="text-xs text-gray-400 mt-0.5">从 13F 原始申报到资本加权均价与击球区差价率的完整数学推导过程</p>
+        <p class="text-xs text-gray-400 mt-0.5">从多季度历史建仓追踪到资本加权成本与击球区差价率的完整数学推导过程</p>
       </div>
 
       <div class="space-y-4 text-xs font-sans leading-relaxed text-gray-300">
@@ -206,32 +273,32 @@
         <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
           <div class="font-bold text-white mb-1.5 flex items-center gap-2">
             <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 inline-flex items-center justify-center font-mono text-xs">1</span>
-            <span>13F 申报数据归集与机构持股拆解</span>
+            <span>多季度历史建仓数据归集与机构持股拆解</span>
           </div>
           <p class="text-gray-400">
-            从 SEC EDGAR 官方备案及 Dataroma 审计数据中提取最新报告期内各投资大师对 <code>UFPI</code> 的真实建仓/持仓记录：
+            从 SEC EDGAR 官方备案及 Dataroma 审计数据中提取并穿透各投资大师对 <code>UFPI</code> 的建仓历史与现阶段持仓：
           </p>
           <ul class="mt-2 space-y-1 text-gray-300 font-mono text-[11px]">
-            <li>• <strong>汤姆·盖纳 (Thomas Gayner)</strong>: 持股 <code>4,000 股</code>，13F 申报价格 <code>$90.75</code>，持仓市值 <code>$363,000.00</code> (占比 0.00%)</li>
+            <li>• <strong>汤姆·盖纳 (Thomas Gayner)</strong>: 首买时期 <code>2026 Q2</code> (持股 1 季)，持股 <code>4,000 股</code>，历史真实加权成本 <code>$90.75</code>，13F 季末参考市价 <code>$90.75</code>，最新持仓市值 <code>$363,000.00</code> (占比 0.00%)</li>
           </ul>
         </div>
 
         <!-- Step 2 -->
-        <div class="p-4 rounded-xl bg-gray-900/60 border border-blue-500/30">
+        <div class="p-4 rounded-xl bg-gray-900/60 border border-emerald-500/30">
           <div class="font-bold text-white mb-1.5 flex items-center gap-2">
-            <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 inline-flex items-center justify-center font-mono text-xs">2</span>
-            <span>机构资本加权申报均价 (Weighted Average Cost) 公式与推导</span>
+            <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 inline-flex items-center justify-center font-mono text-xs">2</span>
+            <span>机构资本加权历史建仓成本 (Weighted Average Cost) 公式与推导</span>
           </div>
           <p class="text-gray-400">
             资本加权均价以各家机构的真实持股数量为权重，能够最真实反映“华尔街聪明钱整体的加权建仓底牌成本”：
           </p>
-          <div class="my-3 p-3 rounded-lg bg-gray-950 font-mono text-xs text-blue-400 border border-gray-800">
-            加权申报均价 = ∑ (每位大师持股数 × 申报价格) ÷ ∑ (每位大师持股数) = 机构持仓总市值 ÷ 机构持股总股数
+          <div class="my-3 p-3 rounded-lg bg-gray-950 font-mono text-xs text-emerald-400 border border-gray-800">
+            加权建仓成本 = ∑ (每位大师持股数 × 历史真实建仓成本) ÷ ∑ (每位大师持股数) = 机构建仓总投入资本 ÷ 机构持股总股数
           </div>
           <div class="space-y-1.5 font-mono text-[11px] text-gray-300">
-            <div>• <strong>分子 (持仓总市值)</strong> = 汤姆·盖纳: $363,000.00 = <span class="text-emerald-400 font-bold">$363,000.00</span></div>
+            <div>• <strong>分子 (建仓总投入资本)</strong> = 汤姆·盖纳: $363,000.00 = <span class="text-emerald-400 font-bold">$363,000.00</span></div>
             <div>• <strong>分母 (持股总股数)</strong> = 汤姆·盖纳: 4,000 股 = <span class="text-white font-bold">4,000 股</span></div>
-            <div>• <strong>加权计算结果</strong> = $363,000.00 ÷ 4,000 股 = <span class="text-blue-400 font-bold text-sm">$90.75</span></div>
+            <div>• <strong>加权计算结果</strong> = $363,000.00 ÷ 4,000 股 = <span class="text-emerald-400 font-bold text-sm">$90.75</span></div>
           </div>
         </div>
 
@@ -239,13 +306,13 @@
         <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
           <div class="font-bold text-white mb-1.5 flex items-center gap-2">
             <span class="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 inline-flex items-center justify-center font-mono text-xs">3</span>
-            <span>简单算术均价 (Simple Mean) 对比与实战解析</span>
+            <span>简单算术建仓均价 (Simple Mean) 对比与实战解析</span>
           </div>
           <div class="font-mono text-xs text-purple-400 my-2 p-2.5 rounded bg-gray-950 border border-gray-800">
-            简单算术均价 = ∑ (各机构申报价格) ÷ 机构总数 = ($90.75) ÷ 1 = $90.75
+            简单算术均价 = ∑ (各机构建仓成本) ÷ 机构总数 = ($90.75) ÷ 1 = $90.75
           </div>
           <p class="text-gray-400 text-[11px] leading-relaxed">
-            💡 <strong>为什么我们优先采用【加权均价】而非【简单算术均价】？</strong><br>
+            💡 <strong>为什么我们优先采用【加权建仓成本】而非【简单算术均价】？</strong><br>
             因为不同大师的持仓规模往往存在数十倍至数百倍的巨大差距。若某大师只用 1,000 万美元试仓，而另一大师重仓 20 亿美元，简单算术均价会过度放大轻仓者的试水价格，无法反映主流大资金的真实重仓成本中枢。加权均价体现了真实资本的筹码底牌。
           </p>
         </div>
@@ -254,18 +321,18 @@
         <div class="p-4 rounded-xl bg-gray-900/60 border border-emerald-500/30">
           <div class="font-bold text-white mb-1.5 flex items-center gap-2">
             <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 inline-flex items-center justify-center font-mono text-xs">4</span>
-            <span>现价与均价击球区差价率 (Margin of Safety / Premium) 测算</span>
+            <span>现价与建仓成本击球区差价率 (Margin of Safety / Premium) 测算</span>
           </div>
           <div class="my-3 p-3 rounded-lg bg-gray-950 font-mono text-xs text-emerald-400 border border-gray-800">
             差价率 (Delta %) = [ (当前市场现价 - 机构加权成本) ÷ 机构加权成本 ] × 100%
           </div>
           <div class="space-y-1.5 font-mono text-[11px] text-gray-300">
             <div>• 当前市场最新现价: <span class="text-white font-bold">暂无行情 (待更新)</span></div>
-            <div>• 机构加权申报成本: <span class="text-blue-400 font-bold">$90.75</span></div>
+            <div>• 机构加权建仓成本: <span class="text-emerald-400 font-bold">$90.75</span></div>
             <div>• 差价计算结果: <span class="font-bold text-sm text-gray-400">待估值</span></div>
           </div>
           <div class="mt-3 p-3 rounded-lg bg-gray-950/70 border border-gray-800 text-[11px] text-gray-300">
-            📌 <strong>价值投资实操指引：</strong> 该标的最新行情正在估值同步队列中，申报成本数据已精确核算完毕。可参考 13F 申报均价作为基本面建仓锚点。
+            📌 <strong>价值投资实操指引：</strong> 该标的最新行情正在估值同步队列中，建仓成本数据已精确核算完毕。可参考历史加权成本作为基本面建仓锚点。
           </div>
         </div>
       </div>

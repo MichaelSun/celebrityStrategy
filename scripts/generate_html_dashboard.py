@@ -828,12 +828,18 @@ def build_cost_matrix(holdings: list, valuations: dict) -> list:
         company_name = clean_company_name(ticker, h_list[0].get("company_name", ""))
 
         gurus_detail = []
+        valid_cost_prices = []
         valid_rep_prices = []
         total_shares = 0
+        total_invested_capital = 0.0
         total_value = 0.0
 
         for h in h_list:
             rep_p = h.get("reported_price") or 0.0
+            # Prefer estimated historical acquisition cost basis; fallback to reported_price
+            est_cost = h.get("estimated_avg_cost")
+            cost_p = est_cost if (est_cost is not None and est_cost > 0) else rep_p
+
             shares = h.get("shares_held") or 0
             w = h.get("portfolio_weight") or 0.0
             act = h.get("activity") or "持有"
@@ -841,13 +847,23 @@ def build_cost_matrix(holdings: list, valuations: dict) -> list:
             g_code = h.get("guru_code", "")
             tier = h.get("tier", 1)
             quarter = h.get("quarter", "")
+            first_buy_period = h.get("first_buy_period") or ""
+            first_buy_price = h.get("first_buy_price") or 0.0
+            holding_quarters = h.get("holding_quarters") or 1
+            latest_reported_price = h.get("latest_reported_price") or rep_p
+            history_trail = h.get("history_trail") or []
 
             # Exited position check
             is_exited = (shares == 0 or "sell 100" in act.lower())
 
             pos_val = round(shares * rep_p, 2) if (rep_p and shares) else round(h.get("value", 0.0), 2)
+            invested_val = round(shares * cost_p, 2) if (cost_p and shares) else pos_val
+
             if not is_exited:
                 total_shares += shares
+                if cost_p and cost_p > 0:
+                    valid_cost_prices.append(cost_p)
+                    total_invested_capital += shares * cost_p if shares > 0 else 0.0
                 if rep_p and rep_p > 0:
                     valid_rep_prices.append(rep_p)
                     total_value += shares * rep_p if shares > 0 else pos_val
@@ -858,22 +874,35 @@ def build_cost_matrix(holdings: list, valuations: dict) -> list:
                 "tier": tier,
                 "shares_held": shares,
                 "reported_price": rep_p,
+                "estimated_avg_cost": cost_p,
+                "first_buy_period": first_buy_period,
+                "first_buy_price": first_buy_price,
+                "holding_quarters": holding_quarters,
+                "latest_reported_price": latest_reported_price,
+                "history_trail": history_trail,
                 "position_value": pos_val,
+                "invested_capital": invested_val,
                 "portfolio_weight": w,
                 "activity": act,
                 "quarter": quarter,
                 "is_exited": is_exited
             })
 
-        # Calculate weighted average and simple average
-        if total_shares > 0 and total_value > 0:
+        # Calculate capital-weighted cost and simple average cost
+        if total_shares > 0 and total_invested_capital > 0:
+            weighted_cost = round(total_invested_capital / total_shares, 2)
+        elif valid_cost_prices:
+            weighted_cost = round(sum(valid_cost_prices) / len(valid_cost_prices), 2)
+        elif total_shares > 0 and total_value > 0:
             weighted_cost = round(total_value / total_shares, 2)
         elif valid_rep_prices:
             weighted_cost = round(sum(valid_rep_prices) / len(valid_rep_prices), 2)
         else:
             weighted_cost = None
 
-        simple_cost = round(sum(valid_rep_prices) / len(valid_rep_prices), 2) if valid_rep_prices else None
+        simple_cost = round(sum(valid_cost_prices) / len(valid_cost_prices), 2) if valid_cost_prices else (
+            round(sum(valid_rep_prices) / len(valid_rep_prices), 2) if valid_rep_prices else None
+        )
 
         # Price diff percentage vs current price
         diff_pct = None
@@ -905,6 +934,7 @@ def build_cost_matrix(holdings: list, valuations: dict) -> list:
             "gurus_detail": gurus_detail,
             "total_shares": total_shares,
             "total_value": round(total_value, 2),
+            "total_invested_capital": round(total_invested_capital, 2),
             "weighted_cost": weighted_cost,
             "simple_cost": simple_cost,
             "current_price": cur_p,
@@ -952,8 +982,13 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
         tier = f"Tier {g.get('tier', 1)}"
         q = g.get("quarter", "")
         rep_p = g.get("reported_price") or 0.0
+        cost_p = g.get("estimated_avg_cost") or rep_p
+        first_buy_period = g.get("first_buy_period") or "—"
+        first_buy_price = g.get("first_buy_price") or rep_p
+        latest_reported_price = g.get("latest_reported_price") or rep_p
+        holding_quarters = g.get("holding_quarters") or 1
         sh = g.get("shares_held") or 0
-        val = g.get("position_value") or (sh * rep_p)
+        val = g.get("position_value") or (sh * latest_reported_price)
         w = g.get("portfolio_weight") or 0.0
         act = g.get("activity") or "持有"
         is_exited = g.get("is_exited", False)
@@ -965,8 +1000,11 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
                 {gname}
                 <span class="text-[10px] ml-1.5 px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">{tier}</span>
               </td>
-              <td class="py-3 text-center text-gray-400 font-mono">{q}</td>
-              <td class="py-3 text-right font-mono font-bold text-blue-400">${rep_p:.2f}</td>
+              <td class="py-3 text-center text-blue-300 font-mono font-medium">{first_buy_period}</td>
+              <td class="py-3 text-center text-gray-400 font-mono">{holding_quarters} 季</td>
+              <td class="py-3 text-right font-mono font-bold text-emerald-400">${cost_p:.2f}</td>
+              <td class="py-3 text-right font-mono text-gray-400">${first_buy_price:.2f}</td>
+              <td class="py-3 text-right font-mono text-gray-400">${latest_reported_price:.2f}</td>
               <td class="py-3 text-right font-mono text-gray-200">{sh:,} 股</td>
               <td class="py-3 text-right font-mono text-gray-200">${val:,.2f}</td>
               <td class="py-3 text-center font-mono font-bold text-white">{w:.2f}%</td>
@@ -984,8 +1022,11 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
                 {gname}
                 <span class="text-[10px] ml-1.5 px-2 py-0.5 rounded bg-red-950/40 text-red-400 border border-red-800/30">已清仓</span>
               </td>
-              <td class="py-3 text-center text-gray-500 font-mono">{q}</td>
-              <td class="py-3 text-right font-mono text-gray-500">${rep_p:.2f}</td>
+              <td class="py-3 text-center text-gray-500 font-mono">{first_buy_period}</td>
+              <td class="py-3 text-center text-gray-500 font-mono">{holding_quarters} 季</td>
+              <td class="py-3 text-right font-mono text-gray-500">${cost_p:.2f}</td>
+              <td class="py-3 text-right font-mono text-gray-500">${first_buy_price:.2f}</td>
+              <td class="py-3 text-right font-mono text-gray-500">${latest_reported_price:.2f}</td>
               <td class="py-3 text-right font-mono text-gray-500">0 股</td>
               <td class="py-3 text-right font-mono text-gray-500">$0.00</td>
               <td class="py-3 text-center font-mono text-gray-500">0.00%</td>
@@ -998,44 +1039,108 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
 
     gurus_table_body = "".join(guru_rows_html)
 
+    # History trail cards
+    history_trail_cards = []
+    for g in gurus_detail:
+        trail = g.get("history_trail") or []
+        if trail:
+            gname = g.get("guru_name") or g.get("guru_code", "")
+            trail_rows = []
+            for t_step in trail:
+                t_q = t_step.get("quarter", "")
+                t_act = t_step.get("action", "") or "Hold"
+                t_sh = t_step.get("shares", 0)
+                t_d_sh = t_step.get("delta_shares", 0)
+                t_p = t_step.get("price", 0.0)
+                t_inflow = t_step.get("inflow", 0.0)
+                t_cum_cost = t_step.get("cum_cost", 0.0)
+                
+                act_badge_cls = "badge-buy" if ("Buy" in t_act or "Add" in t_act or "买" in t_act or "增" in t_act) else ("badge-sell" if ("Sell" in t_act or "Reduce" in t_act or "减" in t_act) else "badge-hold")
+                delta_str = f"+{t_d_sh:,}" if t_d_sh > 0 else (f"{t_d_sh:,}" if t_d_sh < 0 else "0")
+                
+                trail_rows.append(f"""
+                <tr class="hover:bg-gray-800/30">
+                  <td class="py-2 font-mono text-gray-300">{t_q}</td>
+                  <td class="py-2"><span class="px-1.5 py-0.5 rounded text-[10px] {act_badge_cls}">{t_act}</span></td>
+                  <td class="py-2 text-right font-mono text-gray-300">{delta_str} 股</td>
+                  <td class="py-2 text-right font-mono text-gray-300">${t_p:.2f}</td>
+                  <td class="py-2 text-right font-mono text-emerald-400">${t_inflow:,.2f}</td>
+                  <td class="py-2 text-right font-mono text-white">{t_sh:,} 股</td>
+                  <td class="py-2 text-right font-mono font-bold text-blue-400">${t_cum_cost:.2f}</td>
+                </tr>
+                """)
+            trail_tbody = "".join(trail_rows)
+            history_trail_cards.append(f"""
+            <div class="mt-4 p-4 rounded-xl bg-gray-900/50 border border-gray-800">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>📜</span> {gname} 历史季度建仓调仓流水 (共 {len(trail)} 个报告期)
+                </span>
+                <span class="text-[11px] text-gray-400 font-mono">
+                  首次建仓: <span class="text-blue-400 font-bold">{trail[0].get('quarter', '—')}</span> · 当前估算均价: <span class="text-emerald-400 font-bold">${trail[-1].get('cum_cost', 0.0):.2f}</span>
+                </span>
+              </div>
+              <div class="overflow-x-auto max-h-64 overflow-y-auto">
+                <table class="w-full text-left text-[11px]">
+                  <thead class="text-gray-400 uppercase tracking-wider font-mono border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <tr>
+                      <th class="pb-2">报告季度</th>
+                      <th class="pb-2">动作类型</th>
+                      <th class="pb-2 text-right">变动股数</th>
+                      <th class="pb-2 text-right">当季参考价</th>
+                      <th class="pb-2 text-right">买入资金流水</th>
+                      <th class="pb-2 text-right">结余持股</th>
+                      <th class="pb-2 text-right text-blue-400">累计加权成本</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-800/40">
+                    {trail_tbody}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            """)
+    history_trail_html = "".join(history_trail_cards)
+
     # Mathematical components for Step-by-Step cards
+    total_invested_val = sum((g.get("shares_held", 0) * (g.get("estimated_avg_cost") or g.get("reported_price") or 0.0)) for g in active_gurus)
     if active_gurus:
-        val_terms = [f"{g['guru_name'].split('(')[0].strip()}: ${g['position_value']:,.2f}" for g in active_gurus]
+        invested_terms = [f"{g['guru_name'].split('(')[0].strip()}: ${((g.get('shares_held', 0) * (g.get('estimated_avg_cost') or g.get('reported_price') or 0.0))):,.2f}" for g in active_gurus]
         shares_terms = [f"{g['guru_name'].split('(')[0].strip()}: {g['shares_held']:,} 股" for g in active_gurus]
-        simple_terms = [f"${g['reported_price']:.2f}" for g in active_gurus]
-        val_formula_str = " + ".join(val_terms) if len(val_terms) <= 4 else f"{val_terms[0]} + ... (共 {len(val_terms)} 家)"
+        simple_terms = [f"${(g.get('estimated_avg_cost') or g.get('reported_price') or 0.0):.2f}" for g in active_gurus]
+        invested_formula_str = " + ".join(invested_terms) if len(invested_terms) <= 4 else f"{invested_terms[0]} + ... (共 {len(invested_terms)} 家)"
         shares_formula_str = " + ".join(shares_terms) if len(shares_terms) <= 4 else f"{shares_terms[0]} + ... (共 {len(shares_terms)} 家)"
         simple_formula_str = f"({' + '.join(simple_terms)}) ÷ {len(active_gurus)}"
     else:
-        val_formula_str = "$0.00"
+        invested_formula_str = "$0.00"
         shares_formula_str = "0 股"
         simple_formula_str = "—"
 
     # Step 1 bullet points
     guru_step1_items = "".join([
-        f"<li>• <strong>{g['guru_name']}</strong>: 持股 <code>{g['shares_held']:,} 股</code>，13F 申报价格 <code>${g['reported_price']:.2f}</code>，持仓市值 <code>${g['position_value']:,.2f}</code> (占比 {g['portfolio_weight']:.2f}%)</li>"
+        f"<li>• <strong>{g['guru_name']}</strong>: 首买时期 <code>{g.get('first_buy_period') or '—'}</code> (持股 {g.get('holding_quarters', 1)} 季)，持股 <code>{g['shares_held']:,} 股</code>，历史真实加权成本 <code>${(g.get('estimated_avg_cost') or g.get('reported_price') or 0.0):.2f}</code>，13F 季末参考市价 <code>${(g.get('latest_reported_price') or g.get('reported_price') or 0.0):.2f}</code>，最新持仓市值 <code>${g['position_value']:,.2f}</code> (占比 {g['portfolio_weight']:.2f}%)</li>"
         for g in gurus_detail
     ])
 
     # Guidance explanation
     if diff_pct is not None:
         if diff_pct <= -10.0:
-            guidance_explanation = f"当前市场现价比大师加权建仓均价便宜 <strong>{abs(diff_pct):.1f}%</strong>，投资者获得了坚实的安全边际 (Margin of Safety)，属于难得的“以低于顶级大师筹码底牌”入场的黄金击球区！"
+            guidance_explanation = f"当前市场现价比机构加权建仓成本便宜 <strong>{abs(diff_pct):.1f}%</strong>，投资者获得了坚实的安全边际 (Margin of Safety)，属于难得的“以低于顶级大师筹码底牌”入场的黄金击球区！"
         elif diff_pct < 0.0:
-            guidance_explanation = f"当前市场现价比大师加权建仓均价小幅低 <strong>{abs(diff_pct):.1f}%</strong>，投资者拥有适度安全边际，买入成本优于大师申报价格。"
+            guidance_explanation = f"当前市场现价比机构加权建仓成本小幅低 <strong>{abs(diff_pct):.1f}%</strong>，投资者拥有适度安全边际，买入成本优于大师历史建仓成本。"
         elif diff_pct < 20.0:
-            guidance_explanation = f"当前市场现价比大师加权建仓均价高出 <strong>{diff_pct:.1f}%</strong>，大师持仓处于浮盈状态。若公司基本面强劲且自由现金流充沛，仍处于合理配置通道。"
+            guidance_explanation = f"当前市场现价比机构加权建仓成本高出 <strong>{diff_pct:.1f}%</strong>，大师持仓处于浮盈状态。若公司基本面强劲且自由现金流充沛，仍处于合理配置通道。"
         else:
-            guidance_explanation = f"当前市场现价比大师加权建仓均价已大幅高出 <strong>{diff_pct:.1f}%</strong>，大师已录得大额浮盈缓冲垫。克隆买入需谨防高位接盘或机构季度调仓减持，建议谨慎观察。"
+            guidance_explanation = f"当前市场现价比机构加权建仓成本已大幅高出 <strong>{diff_pct:.1f}%</strong>，大师已录得大额浮盈缓冲垫。克隆买入需谨防高位接盘或机构季度调仓减持，建议谨慎观察。"
     else:
-        guidance_explanation = "该标的最新行情正在估值同步队列中，申报成本数据已精确核算完毕。可参考 13F 申报均价作为基本面建仓锚点。"
+        guidance_explanation = "该标的最新行情正在估值同步队列中，建仓成本数据已精确核算完毕。可参考历史加权成本作为基本面建仓锚点。"
 
     html = f"""<!DOCTYPE html>
 <html lang="zh-CN" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{company_name} ({ticker}) 持仓成本拆解与均价推导明细 | CelebrityStrategy</title>
+  <title>{company_name} ({ticker}) 真实持仓成本拆解与均价推导明细 | CelebrityStrategy</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {{
@@ -1098,16 +1203,34 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
       </div>
     </div>
     <div class="flex items-center gap-2 text-xs font-mono">
-      <span class="inline-block w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
-      <span class="text-gray-400">成本算法模型:</span>
-      <span class="text-blue-400 font-bold">资本加权核算</span>
+      <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="text-gray-400">成本核算模型:</span>
+      <span class="text-emerald-400 font-bold">多季历史加权穿透</span>
     </div>
   </header>
 
   <main class="max-w-5xl mx-auto space-y-6">
 
+    <!-- ── SEC 13F Statutory & Cost Basis Educational Notice ──────────────── -->
+    <div class="p-5 rounded-2xl bg-blue-950/20 border border-blue-500/30 text-xs text-gray-300 leading-relaxed shadow-lg">
+      <div class="flex items-start gap-3">
+        <span class="text-blue-400 text-lg leading-none mt-0.5">💡</span>
+        <div class="space-y-1.5">
+          <div class="font-bold text-white text-sm">
+            SEC 13F 申报制度与真实建仓成本重要释疑：为什么历史真实成本远低于最近季末申报市价？
+          </div>
+          <p class="text-gray-400 text-xs">
+            根据美国证券交易委员会 (SEC) 13F 监管法例，机构<strong>仅被要求披露报告期最后一天的按市值计价 (Marked-to-Market Closing Price)</strong> 作为名义持仓参考，<strong>SEC 从不强制披露机构的真实买入价格与成交成本</strong>。
+          </p>
+          <p class="text-gray-400 text-xs">
+            过去常规软件直接将最近季度的 13F 季末市价标为“买入成本”，导致严重失真（例如巴菲特持仓苹果 10 年却被标记为最近季末收盘价 $289.36）。本系统通过<strong>多季度建仓轨迹穿透引擎 (Lot Inflow Tracking)</strong>，回溯各机构从首次建仓季度至今的所有买入与加仓流水，计算出<strong>真实的资本加权历史建仓成本</strong>（如巴菲特 AAPL 真实成本仅约 $41.18，李录 GOOGL 真实成本仅约 $95.96，拼多多段永平真实成本约 $102.76、李录约 $88.43），为价值投资者提供真正具备实操意义的克隆安全边际。
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Hero Banner: Cost & Margin Summary ─────────────────────────────── -->
-    <div class="terminal-card rounded-2xl p-6 md:p-8 border-l-4 border-l-blue-500 glow-blue">
+    <div class="terminal-card rounded-2xl p-6 md:p-8 border-l-4 border-l-emerald-500 glow-blue">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div class="flex items-center gap-2.5 mb-2">
@@ -1124,20 +1247,20 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
 
         <!-- 4-Block Quick Stats Grid -->
         <div class="grid grid-cols-2 gap-3 sm:gap-4 shrink-0 text-right font-mono">
-          <div class="p-3 rounded-xl bg-gray-900/80 border border-blue-500/30 text-left">
-            <div class="text-[10px] text-gray-400 uppercase tracking-wider">机构加权申报均价</div>
-            <div class="text-xl md:text-2xl font-black text-blue-400 mt-0.5">
+          <div class="p-3 rounded-xl bg-gray-900/80 border border-emerald-500/30 text-left">
+            <div class="text-[10px] text-gray-400 uppercase tracking-wider">机构加权建仓成本 (加权申报均价)</div>
+            <div class="text-xl md:text-2xl font-black text-emerald-400 mt-0.5">
               ${f"{weighted_cost:.2f}" if weighted_cost is not None else "—"}
             </div>
-            <div class="text-[10px] text-gray-500 mt-0.5">资金规模加权成本</div>
+            <div class="text-[10px] text-gray-500 mt-0.5">多季度历史资金加权</div>
           </div>
 
           <div class="p-3 rounded-xl bg-gray-900/80 border border-gray-800 text-left">
-            <div class="text-[10px] text-gray-400 uppercase tracking-wider">简单算术均价</div>
+            <div class="text-[10px] text-gray-400 uppercase tracking-wider">简单算术建仓均价</div>
             <div class="text-xl md:text-2xl font-black text-gray-300 mt-0.5">
               ${f"{simple_cost:.2f}" if simple_cost is not None else "—"}
             </div>
-            <div class="text-[10px] text-gray-500 mt-0.5">各机构同权均值</div>
+            <div class="text-[10px] text-gray-500 mt-0.5">各机构建仓同权均值</div>
           </div>
 
           <div class="p-3 rounded-xl bg-gray-900/80 border border-gray-800 text-left">
@@ -1166,9 +1289,9 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
       <div class="border-b border-gray-800 pb-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div>
           <h2 class="text-lg md:text-xl font-bold text-white flex items-center gap-2">
-            <span>🏛️</span> 【{company_name}】大师独立持仓明细拆解
+            <span>🏛️</span> 【{company_name}】大师独立持仓明细与历史建仓成本拆解
           </h2>
-          <p class="text-xs text-gray-400 mt-0.5">每位跟踪大师对该标的的真实申报持股数量、买入成本与持仓市值</p>
+          <p class="text-xs text-gray-400 mt-0.5">穿透 13F 申报盲区：展示每位大师的首次建仓期、真实历史成本与最近持仓市值</p>
         </div>
         <div class="text-xs font-mono text-gray-400">
           合计持股: <span class="text-white font-bold">{total_shares:,} 股</span>
@@ -1181,10 +1304,13 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
           <thead>
             <tr class="border-b border-gray-800 text-gray-400 uppercase text-[11px] tracking-wider font-mono">
               <th class="pb-3 font-medium">投资大师机构 (Guru)</th>
-              <th class="pb-3 font-medium text-center">报告期</th>
-              <th class="pb-3 font-medium text-right text-blue-400">申报买入均价</th>
+              <th class="pb-3 font-medium text-center">首次建仓季</th>
+              <th class="pb-3 font-medium text-center">持仓时长</th>
+              <th class="pb-3 font-medium text-right text-emerald-400">真实建仓成本</th>
+              <th class="pb-3 font-medium text-right text-gray-400">首建参考价</th>
+              <th class="pb-3 font-medium text-right text-gray-400">13F 季末市价</th>
               <th class="pb-3 font-medium text-right">持仓股数</th>
-              <th class="pb-3 font-medium text-right">持仓总市值</th>
+              <th class="pb-3 font-medium text-right">最新持仓市值</th>
               <th class="pb-3 font-medium text-center">持仓占比</th>
               <th class="pb-3 font-medium text-right">季度动作</th>
             </tr>
@@ -1195,16 +1321,20 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
           <tfoot>
             <tr class="border-t-2 border-gray-700 bg-gray-900/80 font-mono font-bold text-xs">
               <td class="py-3 text-white">合计加权统计 (Active Totals)</td>
-              <td class="py-3 text-center text-gray-400">{len(active_gurus)} 家机构</td>
-              <td class="py-3 text-right text-blue-400">${f"{weighted_cost:.2f}" if weighted_cost is not None else "—"} (加权均价)</td>
+              <td class="py-3 text-center text-gray-400" colspan="2">{len(active_gurus)} 家机构重仓</td>
+              <td class="py-3 text-right text-emerald-400">${f"{weighted_cost:.2f}" if weighted_cost is not None else "—"} (综合建仓成本)</td>
+              <td class="py-3 text-right text-gray-400" colspan="2">—</td>
               <td class="py-3 text-right text-white">{total_shares:,} 股</td>
               <td class="py-3 text-right text-emerald-400">${total_value:,.2f}</td>
               <td class="py-3 text-center text-gray-400">—</td>
-              <td class="py-3 text-right text-emerald-400">合算均价</td>
+              <td class="py-3 text-right text-emerald-400">合算完成</td>
             </tr>
           </tfoot>
         </table>
       </div>
+
+      <!-- History Trail Details (if any guru has multi-quarter trail) -->
+      {history_trail_html}
     </div>
 
     <!-- ── Card 2: 🧮 均价计算推导流程与数学步骤 ── -->
@@ -1213,7 +1343,7 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
         <h2 class="text-lg md:text-xl font-bold text-white flex items-center gap-2">
           <span>🧮</span> 均价计算公式与详细推导流水线
         </h2>
-        <p class="text-xs text-gray-400 mt-0.5">从 13F 原始申报到资本加权均价与击球区差价率的完整数学推导过程</p>
+        <p class="text-xs text-gray-400 mt-0.5">从多季度历史建仓追踪到资本加权成本与击球区差价率的完整数学推导过程</p>
       </div>
 
       <div class="space-y-4 text-xs font-sans leading-relaxed text-gray-300">
@@ -1221,10 +1351,10 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
         <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
           <div class="font-bold text-white mb-1.5 flex items-center gap-2">
             <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 inline-flex items-center justify-center font-mono text-xs">1</span>
-            <span>13F 申报数据归集与机构持股拆解</span>
+            <span>多季度历史建仓数据归集与机构持股拆解</span>
           </div>
           <p class="text-gray-400">
-            从 SEC EDGAR 官方备案及 Dataroma 审计数据中提取最新报告期内各投资大师对 <code>{ticker}</code> 的真实建仓/持仓记录：
+            从 SEC EDGAR 官方备案及 Dataroma 审计数据中提取并穿透各投资大师对 <code>{ticker}</code> 的建仓历史与现阶段持仓：
           </p>
           <ul class="mt-2 space-y-1 text-gray-300 font-mono text-[11px]">
             {guru_step1_items}
@@ -1232,21 +1362,21 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
         </div>
 
         <!-- Step 2 -->
-        <div class="p-4 rounded-xl bg-gray-900/60 border border-blue-500/30">
+        <div class="p-4 rounded-xl bg-gray-900/60 border border-emerald-500/30">
           <div class="font-bold text-white mb-1.5 flex items-center gap-2">
-            <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 inline-flex items-center justify-center font-mono text-xs">2</span>
-            <span>机构资本加权申报均价 (Weighted Average Cost) 公式与推导</span>
+            <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 inline-flex items-center justify-center font-mono text-xs">2</span>
+            <span>机构资本加权历史建仓成本 (Weighted Average Cost) 公式与推导</span>
           </div>
           <p class="text-gray-400">
             资本加权均价以各家机构的真实持股数量为权重，能够最真实反映“华尔街聪明钱整体的加权建仓底牌成本”：
           </p>
-          <div class="my-3 p-3 rounded-lg bg-gray-950 font-mono text-xs text-blue-400 border border-gray-800">
-            加权申报均价 = ∑ (每位大师持股数 × 申报价格) ÷ ∑ (每位大师持股数) = 机构持仓总市值 ÷ 机构持股总股数
+          <div class="my-3 p-3 rounded-lg bg-gray-950 font-mono text-xs text-emerald-400 border border-gray-800">
+            加权建仓成本 = ∑ (每位大师持股数 × 历史真实建仓成本) ÷ ∑ (每位大师持股数) = 机构建仓总投入资本 ÷ 机构持股总股数
           </div>
           <div class="space-y-1.5 font-mono text-[11px] text-gray-300">
-            <div>• <strong>分子 (持仓总市值)</strong> = {val_formula_str} = <span class="text-emerald-400 font-bold">${total_value:,.2f}</span></div>
+            <div>• <strong>分子 (建仓总投入资本)</strong> = {invested_formula_str} = <span class="text-emerald-400 font-bold">${total_invested_val:,.2f}</span></div>
             <div>• <strong>分母 (持股总股数)</strong> = {shares_formula_str} = <span class="text-white font-bold">{total_shares:,} 股</span></div>
-            <div>• <strong>加权计算结果</strong> = ${total_value:,.2f} ÷ {total_shares:,} 股 = <span class="text-blue-400 font-bold text-sm">${f"{weighted_cost:.2f}" if weighted_cost is not None else "—"}</span></div>
+            <div>• <strong>加权计算结果</strong> = ${total_invested_val:,.2f} ÷ {total_shares:,} 股 = <span class="text-emerald-400 font-bold text-sm">${f"{weighted_cost:.2f}" if weighted_cost is not None else "—"}</span></div>
           </div>
         </div>
 
@@ -1254,13 +1384,13 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
         <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
           <div class="font-bold text-white mb-1.5 flex items-center gap-2">
             <span class="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 inline-flex items-center justify-center font-mono text-xs">3</span>
-            <span>简单算术均价 (Simple Mean) 对比与实战解析</span>
+            <span>简单算术建仓均价 (Simple Mean) 对比与实战解析</span>
           </div>
           <div class="font-mono text-xs text-purple-400 my-2 p-2.5 rounded bg-gray-950 border border-gray-800">
-            简单算术均价 = ∑ (各机构申报价格) ÷ 机构总数 = {simple_formula_str} = ${f"{simple_cost:.2f}" if simple_cost is not None else "—"}
+            简单算术均价 = ∑ (各机构建仓成本) ÷ 机构总数 = {simple_formula_str} = ${f"{simple_cost:.2f}" if simple_cost is not None else "—"}
           </div>
           <p class="text-gray-400 text-[11px] leading-relaxed">
-            💡 <strong>为什么我们优先采用【加权均价】而非【简单算术均价】？</strong><br>
+            💡 <strong>为什么我们优先采用【加权建仓成本】而非【简单算术均价】？</strong><br>
             因为不同大师的持仓规模往往存在数十倍至数百倍的巨大差距。若某大师只用 1,000 万美元试仓，而另一大师重仓 20 亿美元，简单算术均价会过度放大轻仓者的试水价格，无法反映主流大资金的真实重仓成本中枢。加权均价体现了真实资本的筹码底牌。
           </p>
         </div>
@@ -1269,14 +1399,14 @@ def generate_cost_detail_html(item: dict, catalog_meta: dict) -> str:
         <div class="p-4 rounded-xl bg-gray-900/60 border border-emerald-500/30">
           <div class="font-bold text-white mb-1.5 flex items-center gap-2">
             <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 inline-flex items-center justify-center font-mono text-xs">4</span>
-            <span>现价与均价击球区差价率 (Margin of Safety / Premium) 测算</span>
+            <span>现价与建仓成本击球区差价率 (Margin of Safety / Premium) 测算</span>
           </div>
           <div class="my-3 p-3 rounded-lg bg-gray-950 font-mono text-xs text-emerald-400 border border-gray-800">
             差价率 (Delta %) = [ (当前市场现价 - 机构加权成本) ÷ 机构加权成本 ] × 100%
           </div>
           <div class="space-y-1.5 font-mono text-[11px] text-gray-300">
             <div>• 当前市场最新现价: <span class="text-white font-bold">{f"${current_price:.2f}" if current_price else "暂无行情 (待更新)"}</span></div>
-            <div>• 机构加权申报成本: <span class="text-blue-400 font-bold">${f"{weighted_cost:.2f}" if weighted_cost is not None else "—"}</span></div>
+            <div>• 机构加权建仓成本: <span class="text-emerald-400 font-bold">${f"{weighted_cost:.2f}" if weighted_cost is not None else "—"}</span></div>
             <div>• 差价计算结果: {f"[ ({current_price:.2f} - {weighted_cost:.2f}) ÷ {weighted_cost:.2f} ] × 100% = " if (current_price and weighted_cost) else ""}<span class="font-bold text-sm {'text-emerald-400' if diff_pct and diff_pct < 0 else ('text-amber-400' if diff_pct and diff_pct > 0 else 'text-gray-400')}">{f"{diff_pct:+.2f}%" if diff_pct is not None else "待估值"}</span></div>
           </div>
           <div class="mt-3 p-3 rounded-lg bg-gray-950/70 border border-gray-800 text-[11px] text-gray-300">
@@ -1350,6 +1480,36 @@ def load_dashboard_data(db_path: str):
     ORDER BY ph.portfolio_weight DESC
     """, (latest_quarter,)).fetchall()
     holdings = [dict(r) for r in holdings_rows]
+
+    # 2b. Query guru_cost_basis to get true historical acquisition cost and lot trail
+    cost_basis_map = {}
+    try:
+        cb_rows = cur.execute("SELECT * FROM guru_cost_basis").fetchall()
+        for r in cb_rows:
+            cost_basis_map[(r["guru_code"], r["ticker"])] = dict(r)
+    except Exception:
+        pass
+
+    for h in holdings:
+        key = (h.get("guru_code"), h.get("ticker"))
+        cb = cost_basis_map.get(key)
+        if cb and cb.get("estimated_avg_cost") and cb.get("estimated_avg_cost") > 0:
+            h["estimated_avg_cost"] = cb["estimated_avg_cost"]
+            h["first_buy_period"] = cb.get("first_buy_period") or ""
+            h["first_buy_price"] = cb.get("first_buy_price") or 0.0
+            h["holding_quarters"] = cb.get("holding_quarters") or 1
+            h["latest_reported_price"] = cb.get("latest_reported_price") or h.get("reported_price") or 0.0
+            try:
+                h["history_trail"] = json.loads(cb.get("history_json") or "[]")
+            except Exception:
+                h["history_trail"] = []
+        else:
+            h["estimated_avg_cost"] = h.get("reported_price") or 0.0
+            h["first_buy_period"] = ""
+            h["first_buy_price"] = h.get("reported_price") or 0.0
+            h["holding_quarters"] = 1
+            h["latest_reported_price"] = h.get("reported_price") or 0.0
+            h["history_trail"] = []
 
     # 3. Valuation Cache
     val_rows = cur.execute("SELECT * FROM valuation_cache").fetchall()
@@ -1463,8 +1623,10 @@ def generate_html(data: dict) -> str:
             if g.get("is_exited"):
                 chips.append(f'<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-950/40 border border-red-800/40 text-[10px] text-red-400 line-through mr-1 mb-1">{short_name} (清仓)</span>')
             else:
-                p_str = f"${g['reported_price']:.2f}" if g.get("reported_price") else "—"
-                chips.append(f'<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 text-[10px] text-gray-300 mr-1 mb-1"><span class="text-gray-400 mr-1">{short_name}:</span><span class="font-mono text-blue-300 font-semibold">{p_str}</span></span>')
+                cost_val = g.get("estimated_avg_cost") or g.get("reported_price") or 0.0
+                p_str = f"${cost_val:.2f}" if cost_val > 0 else "—"
+                period_str = f' <span class="text-[9px] text-gray-500">({g.get("first_buy_period")})</span>' if g.get("first_buy_period") else ''
+                chips.append(f'<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 text-[10px] text-gray-300 mr-1 mb-1"><span class="text-gray-400 mr-1">{short_name}:</span><span class="font-mono text-emerald-400 font-semibold">{p_str}</span>{period_str}</span>')
         chips_html = "".join(chips)
 
         diff_pct = d.get("diff_pct")
@@ -1509,7 +1671,7 @@ def generate_html(data: dict) -> str:
           <td class="py-3 text-right">
             <a href="companies/{d['ticker']}_cost.html"
                title="点击查看【{d['company_name']}】持仓均价详细计算推导与各位大师持仓明细 ↗"
-               class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-500/10 hover:bg-blue-500/25 text-blue-400 hover:text-blue-300 border border-blue-500/30 hover:border-blue-400 font-bold font-mono transition-all group">
+               class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono transition-all group">
               <span>{f"${d['weighted_cost']:.2f}" if d.get('weighted_cost') is not None else '—'}</span>
               <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
             </a>
@@ -2047,14 +2209,25 @@ def generate_html(data: dict) -> str:
           </div>
         </div>
 
+        <!-- Educational Banner on 13F Historical Cost Modeling -->
+        <div class="mb-4 p-3.5 rounded-xl bg-blue-950/20 border border-blue-500/30 text-xs text-gray-300 flex items-start gap-2.5">
+          <span class="text-blue-400 text-base leading-none mt-0.5">💡</span>
+          <div class="space-y-0.5">
+            <span class="font-bold text-white">穿透 13F 申报盲区：</span>
+            <span class="text-gray-400">
+              美国 SEC 13F 法定仅申报季度末收盘市价，从不公布真实买入成本。本平台通过多季度建仓轨迹引擎 (Lot Inflow Tracking)，资金加权推导大师真实历史成本（如巴菲特 AAPL 真实成本仅约 $41.18，段永平 PDD 约 $102.76、李录 PDD 约 $88.43），点击均价即可查验每季度的买入流水分步推导。
+            </span>
+          </div>
+        </div>
+
         <table class="w-full text-left text-xs">
           <thead>
             <tr class="border-b border-gray-800 text-gray-400 uppercase text-[11px] tracking-wider">
               <th class="pb-3 font-medium">标的代码 / 公司</th>
-              <th class="pb-3 font-medium">持仓大师与独立买价</th>
-              <th class="pb-3 font-medium text-right">机构加权申报均价</th>
+              <th class="pb-3 font-medium">持仓大师与真实建仓成本 (首买时期)</th>
+              <th class="pb-3 font-medium text-right text-emerald-400">机构加权建仓成本</th>
               <th class="pb-3 font-medium text-right">当前市场现价</th>
-              <th class="pb-3 font-medium text-center">相对大师成本差价 (Delta)</th>
+              <th class="pb-3 font-medium text-center">相对建仓成本差价 (Delta)</th>
               <th class="pb-3 font-medium text-center">TTM P/E</th>
               <th class="pb-3 font-medium text-center">FCF Yield</th>
               <th class="pb-3 font-medium text-right">克隆击球区建议</th>
@@ -2376,8 +2549,10 @@ def generate_html(data: dict) -> str:
             if (g.is_exited) {{
               chips += `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-950/40 border border-red-800/40 text-[10px] text-red-400 line-through mr-1 mb-1">${{shortName}} (清仓)</span>`;
             }} else {{
-              const pStr = (g.reported_price != null && g.reported_price > 0) ? '$' + g.reported_price.toFixed(2) : '—';
-              chips += `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 text-[10px] text-gray-300 mr-1 mb-1"><span class="text-gray-400 mr-1">${{shortName}}:</span><span class="font-mono text-blue-300 font-semibold">${{pStr}}</span></span>`;
+              const costVal = (g.estimated_avg_cost != null && g.estimated_avg_cost > 0) ? g.estimated_avg_cost : (g.reported_price || 0);
+              const pStr = costVal > 0 ? '$' + costVal.toFixed(2) : '—';
+              const buyPeriod = g.first_buy_period ? ` <span class="text-[9px] text-gray-500">(${{g.first_buy_period}})</span>` : '';
+              chips += `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 text-[10px] text-gray-300 mr-1 mb-1"><span class="text-gray-400 mr-1">${{shortName}}:</span><span class="font-mono text-emerald-400 font-semibold">${{pStr}}</span>${{buyPeriod}}</span>`;
             }}
           }});
 
@@ -2433,7 +2608,7 @@ def generate_html(data: dict) -> str:
               <td class="py-3 text-right">
                 <a href="companies/${{d.ticker}}_cost.html"
                    title="点击查看【${{d.company_name}}】持仓均价详细计算推导与各位大师持仓明细 ↗"
-                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-500/10 hover:bg-blue-500/25 text-blue-400 hover:text-blue-300 border border-blue-500/30 hover:border-blue-400 font-bold font-mono transition-all group">
+                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 font-bold font-mono transition-all group">
                   <span>${{costStr}}</span>
                   <span class="text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">↗</span>
                 </a>
