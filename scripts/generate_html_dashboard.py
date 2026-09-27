@@ -898,18 +898,25 @@ def build_cost_matrix(holdings: list, valuations: dict) -> list:
         elif valid_rep_prices:
             weighted_cost = round(sum(valid_rep_prices) / len(valid_rep_prices), 2)
         else:
-            weighted_cost = None
+            # Fallback for fully exited positions (all gurus sold 100%)
+            all_costs = [g.get("estimated_avg_cost") or g.get("reported_price") for g in gurus_detail if (g.get("estimated_avg_cost") or g.get("reported_price"))]
+            weighted_cost = round(sum(all_costs) / len(all_costs), 2) if all_costs else None
 
         simple_cost = round(sum(valid_cost_prices) / len(valid_cost_prices), 2) if valid_cost_prices else (
-            round(sum(valid_rep_prices) / len(valid_rep_prices), 2) if valid_rep_prices else None
+            round(sum(valid_rep_prices) / len(valid_rep_prices), 2) if valid_rep_prices else weighted_cost
         )
 
         # Price diff percentage vs current price
         diff_pct = None
-        status_category = "pending"  # "discount", "premium", "pending"
+        status_category = "pending"  # "discount", "premium", "pending", "exited"
         guidance = "待更新最新行情"
 
-        if cur_p and weighted_cost and weighted_cost > 0:
+        if total_shares == 0 and any(g.get("is_exited") for g in gurus_detail):
+            status_category = "exited"
+            guidance = "🔴 大师已全额清仓"
+            if cur_p and weighted_cost and weighted_cost > 0:
+                diff_pct = round(((cur_p - weighted_cost) / weighted_cost) * 100, 2)
+        elif cur_p and weighted_cost and weighted_cost > 0:
             diff_pct = round(((cur_p - weighted_cost) / weighted_cost) * 100, 2)
             if diff_pct <= -10.0:
                 status_category = "discount"
@@ -1579,6 +1586,7 @@ def generate_html(data: dict) -> str:
     total_cost_count = len(cost_matrix)
     discount_cost_count = sum(1 for c in cost_matrix if c["status_category"] == "discount")
     premium_cost_count = sum(1 for c in cost_matrix if c["status_category"] == "premium")
+    exited_cost_count = sum(1 for c in cost_matrix if c["status_category"] == "exited")
     pending_cost_count = sum(1 for c in cost_matrix if c["status_category"] == "pending")
 
     # Dynamic Top Discount for KPI 3
@@ -1640,7 +1648,9 @@ def generate_html(data: dict) -> str:
         else:
             delta_badge = '<span class="text-gray-500 text-xs">—</span>'
 
-        if diff_pct is not None:
+        if d.get("status_category") == "exited":
+            guidance_html = '<span class="text-red-400 font-sans font-medium">🔴 大师已全额清仓</span>'
+        elif diff_pct is not None:
             if diff_pct <= -10:
                 guidance_html = '<span class="text-emerald-400 font-sans font-medium">🟢 黄金击球区</span>'
             elif diff_pct < 0:
@@ -2193,9 +2203,12 @@ def generate_html(data: dict) -> str:
             <button onclick="filterCostTable('premium')" id="btn-cost-premium" class="cost-filter-btn px-3 py-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-white font-medium border border-transparent">
               🟡 溢价已涨区 ({premium_cost_count})
             </button>
-            <button onclick="filterCostTable('pending')" id="btn-cost-pending" class="cost-filter-btn px-3 py-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-white font-medium border border-transparent">
+            {f'''<button onclick="filterCostTable('exited')" id="btn-cost-exited" class="cost-filter-btn px-3 py-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-white font-medium border border-transparent">
+              🔴 大师已清仓 ({exited_cost_count})
+            </button>''' if exited_cost_count > 0 else ''}
+            {f'''<button onclick="filterCostTable('pending')" id="btn-cost-pending" class="cost-filter-btn px-3 py-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-white font-medium border border-transparent">
               ⚪ 待更新估值 ({pending_cost_count})
-            </button>
+            </button>''' if pending_cost_count > 0 else ''}
           </div>
           <!-- Page Size & Info -->
           <div class="flex items-center gap-3 text-xs text-gray-400 font-mono">
@@ -2511,6 +2524,7 @@ def generate_html(data: dict) -> str:
       return costData.filter(item => {{
         if (costFilter === 'discount' && item.status_category !== 'discount') return false;
         if (costFilter === 'premium' && item.status_category !== 'premium') return false;
+        if (costFilter === 'exited' && item.status_category !== 'exited') return false;
         if (costFilter === 'pending' && item.status_category !== 'pending') return false;
 
         if (q) {{
@@ -2570,7 +2584,9 @@ def generate_html(data: dict) -> str:
           }}
 
           let guidanceHtml = '';
-          if (d.diff_pct !== null && d.diff_pct !== undefined) {{
+          if (d.status_category === 'exited') {{
+            guidanceHtml = `<span class="text-red-400 font-sans font-medium">🔴 大师已全额清仓</span>`;
+          }} else if (d.diff_pct !== null && d.diff_pct !== undefined) {{
             if (d.diff_pct <= -10) {{
               guidanceHtml = `<span class="text-emerald-400 font-sans font-medium">🟢 黄金击球区</span>`;
             }} else if (d.diff_pct < 0) {{

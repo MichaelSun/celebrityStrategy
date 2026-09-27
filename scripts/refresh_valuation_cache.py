@@ -57,75 +57,137 @@ def get_all_tickers_from_db(db_path):
     return [r[0] for r in rows]
 
 
-def refresh_valuation_cache(db_path, extra_tickers=None, verbose=True):
+import concurrent.futures
+
+def fetch_single_ticker_valuation(orig_ticker: str, yf_ticker: str) -> dict:
+    """Fetch valuation and price metrics for a single ticker via yfinance."""
+    try:
+        tk = yf.Ticker(yf_ticker)
+        info = tk.info or {}
+        current_price = (
+            info.get("currentPrice")
+            or info.get("regularMarketPrice")
+            or info.get("previousClose")
+        )
+        if not current_price:
+            try:
+                current_price = tk.fast_info.get("lastPrice") or tk.fast_info.get("previousClose")
+            except Exception:
+                pass
+
+        pe_ttm = info.get("trailingPE")
+        forward_pe = info.get("forwardPE")
+        market_cap = info.get("marketCap")
+        if not market_cap:
+            try:
+                market_cap = tk.fast_info.get("marketCap")
+            except Exception:
+                pass
+
+        week52_low = info.get("fiftyTwoWeekLow")
+        if not week52_low:
+            try:
+                week52_low = tk.fast_info.get("yearLow")
+            except Exception:
+                pass
+
+        week52_high = info.get("fiftyTwoWeekHigh")
+        if not week52_high:
+            try:
+                week52_high = tk.fast_info.get("yearHigh")
+            except Exception:
+                pass
+
+        sector = info.get("sector", "")
+        fcf = info.get("freeCashflow")
+        fcf_yield = None
+        if fcf and market_cap and market_cap > 0:
+            fcf_yield = round(fcf / market_cap * 100, 2)  # as percentage
+
+        market_cap_b = round(market_cap / 1e9, 2) if market_cap else None
+
+        return {
+            "ticker": orig_ticker,
+            "current_price": current_price,
+            "pe_ttm": pe_ttm,
+            "forward_pe": forward_pe,
+            "fcf_yield": fcf_yield,
+            "market_cap_b": market_cap_b,
+            "week52_low": week52_low,
+            "week52_high": week52_high,
+            "sector": sector,
+            "error": None
+        }
+    except Exception as e:
+        return {
+            "ticker": orig_ticker,
+            "current_price": None,
+            "pe_ttm": None,
+            "forward_pe": None,
+            "fcf_yield": None,
+            "market_cap_b": None,
+            "week52_low": None,
+            "week52_high": None,
+            "sector": "",
+            "error": str(e)
+        }
+
+
+def refresh_valuation_cache(db_path, extra_tickers=None, verbose=True, max_workers=16):
     """
-    Fetch valuation data from yfinance and write to valuation_cache table.
+    Fetch valuation data from yfinance concurrently and write to valuation_cache table.
     Returns count of successfully updated tickers.
     """
     # Collect all tickers to refresh
     db_tickers = get_all_tickers_from_db(db_path)
-    all_tickers = list(set(CORE_TICKERS + db_tickers + (extra_tickers or [])))
+    all_tickers = sorted(list(set(CORE_TICKERS + db_tickers + (extra_tickers or []))))
 
-    # Normalize for yfinance (BRK.B → BRK-B)
-    yf_map = {t: t.replace(".", "-") for t in all_tickers}
-    inv_map = {v: k for k, v in yf_map.items()}
+    # Normalize for yfinance (e.g. BRK.B -> BRK-B, off-13F proxies)
+    yf_map = {}
+    for t in all_tickers:
+        if t in OFF_13F_PROXIES:
+            yf_map[t] = OFF_13F_PROXIES[t]
+        else:
+            yf_map[t] = t.replace(".", "-")
 
     if verbose:
-        print(f"  📡 Fetching valuation data for {len(all_tickers)} tickers from yfinance...")
+        print(f"  📡 Concurrently fetching valuation data for {len(all_tickers)} tickers from yfinance ({max_workers} threads)...")
+
+    now_ts = datetime.datetime.now().isoformat(timespec="seconds")
+    results = []
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_map = {
+            executor.submit(fetch_single_ticker_valuation, t, yf_map[t]): t
+            for t in all_tickers
+        }
+        for future in concurrent.futures.as_completed(future_map):
+            res = future.result()
+            results.append(res)
+            if verbose and res.get("current_price"):
+                p = res["current_price"]
+                pe = f"PE={res['pe_ttm']:.1f}" if res.get('pe_ttm') else "PE=N/A"
+                fcf = f"FCF%={res['fcf_yield']:.1f}%" if res.get('fcf_yield') else "FCF=N/A"
+                print(f"    ✅ {res['ticker']:12s} ${p:<8.2f} {pe:12s} {fcf}")
+            elif verbose:
+                print(f"    ⚠️ {res['ticker']:12s} — no price data ({res.get('error') or 'empty'})")
 
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
-    now_ts = datetime.datetime.now().isoformat(timespec="seconds")
     updated = 0
 
-    for orig_ticker in all_tickers:
-        yf_ticker = yf_map[orig_ticker]
-        try:
-            tk = yf.Ticker(yf_ticker)
-            info = tk.info or {}
-
-            current_price = (
-                info.get("currentPrice")
-                or info.get("regularMarketPrice")
-                or info.get("previousClose")
-            )
-            pe_ttm = info.get("trailingPE")
-            forward_pe = info.get("forwardPE")
-            market_cap = info.get("marketCap")
-            week52_low = info.get("fiftyTwoWeekLow")
-            week52_high = info.get("fiftyTwoWeekHigh")
-            sector = info.get("sector", "")
-
-            # FCF Yield = Free Cash Flow / Market Cap (approximation)
-            fcf = info.get("freeCashflow")
-            fcf_yield = None
-            if fcf and market_cap and market_cap > 0:
-                fcf_yield = round(fcf / market_cap * 100, 2)  # as percentage
-
-            market_cap_b = round(market_cap / 1e9, 2) if market_cap else None
-
-            if current_price:
-                cur.execute("""
-                INSERT OR REPLACE INTO valuation_cache
-                (ticker, current_price, pe_ttm, forward_pe, fcf_yield,
-                 market_cap_b, week52_low, week52_high, sector, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    orig_ticker, current_price, pe_ttm, forward_pe, fcf_yield,
-                    market_cap_b, week52_low, week52_high, sector, now_ts,
-                ))
-                updated += 1
-                if verbose:
-                    fcf_str = f"FCF%={fcf_yield:.1f}%" if fcf_yield else "FCF=N/A"
-                    pe_str = f"PE={pe_ttm:.1f}" if pe_ttm else "PE=N/A"
-                    print(f"    ✅ {orig_ticker:12s} ${current_price:<8.2f} {pe_str:12s} {fcf_str}")
-            else:
-                if verbose:
-                    print(f"    ⚠️ {orig_ticker:12s} — no price data")
-
-        except Exception as e:
-            if verbose:
-                print(f"    ❌ {orig_ticker:12s} — error: {e}")
+    for res in results:
+        if res.get("current_price"):
+            cur.execute("""
+            INSERT OR REPLACE INTO valuation_cache
+            (ticker, current_price, pe_ttm, forward_pe, fcf_yield,
+             market_cap_b, week52_low, week52_high, sector, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                res["ticker"], res["current_price"], res["pe_ttm"], res["forward_pe"], res["fcf_yield"],
+                res["market_cap_b"], res["week52_low"], res["week52_high"], res["sector"], now_ts,
+            ))
+            updated += 1
 
     conn.commit()
     conn.close()

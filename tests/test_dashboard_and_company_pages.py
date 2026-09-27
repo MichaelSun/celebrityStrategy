@@ -149,7 +149,10 @@ class TestDashboardAndCompanyPages(unittest.TestCase):
         self.assertEqual(duplicates, [])
 
         # Requirement 5: Cost matrix links to {ticker}_cost.html and contains pagination
-        self.assertIn('href="companies/DHI_cost.html"', html)
+        cost_matrix = build_cost_matrix(data["holdings"], data["valuations"])
+        first_cost_ticker = cost_matrix[0]["ticker"]
+        self.assertIn(f'href="companies/{first_cost_ticker}_cost.html"', html)
+        self.assertIn('"ticker": "DHI"', html)
         self.assertIn('id="tab-discounts"', html)
         self.assertIn('id="costPageNumbers"', html)
         self.assertIn('id="btnCostPrev"', html)
