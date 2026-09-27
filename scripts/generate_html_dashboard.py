@@ -1974,28 +1974,45 @@ def generate_html(data: dict) -> str:
             </div>
           </div>
 
-          <!-- ── Header Tier 2: Segmented Filter Control & Subtitle ── -->
-          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-3.5">
-            <!-- Segmented Filter Pills Capsule -->
-            <div class="inline-flex items-center p-1 bg-gray-900/90 border border-gray-800 rounded-xl gap-1 overflow-x-auto max-w-full" id="scatterFilterPills">
-              <button onclick="setScatterFilter('core')" id="sbtn-core" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap">
-                🔥 核心重仓 (Top {core_scatter_count})
-              </button>
-              <button onclick="setScatterFilter('golden')" id="sbtn-golden" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap">
-                🟢 黄金击球区 ({golden_scatter_count})
-              </button>
-              <button onclick="setScatterFilter('brk')" id="sbtn-brk" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap">
-                👑 沃伦·巴菲特 ({brk_scatter_count})
-              </button>
-              <button onclick="setScatterFilter('duan_li')" id="sbtn-duan_li" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap">
-                🎯 李录 & 段永平 ({duan_li_scatter_count})
-              </button>
-              <button onclick="setScatterFilter('all')" id="sbtn-all" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap">
-                🌐 全量标的 ({all_scatter_count})
-              </button>
+          <!-- ── Header Tier 2: Segmented Filter Control & Label Density Switcher ── -->
+          <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-3.5">
+            <!-- Left: Filter Pills + Label Density Switcher in unified row -->
+            <div class="flex items-center gap-2.5 flex-wrap">
+              <!-- Segmented Filter Pills Capsule -->
+              <div class="inline-flex items-center p-1 bg-gray-900/90 border border-gray-800 rounded-xl gap-1 overflow-x-auto max-w-full" id="scatterFilterPills">
+                <button onclick="setScatterFilter('core')" id="sbtn-core" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap">
+                  🔥 核心重仓 (Top {core_scatter_count})
+                </button>
+                <button onclick="setScatterFilter('golden')" id="sbtn-golden" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap">
+                  🟢 黄金击球区 ({golden_scatter_count})
+                </button>
+                <button onclick="setScatterFilter('brk')" id="sbtn-brk" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap">
+                  👑 沃伦·巴菲特 ({brk_scatter_count})
+                </button>
+                <button onclick="setScatterFilter('duan_li')" id="sbtn-duan_li" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap">
+                  🎯 李录 & 段永平 ({duan_li_scatter_count})
+                </button>
+                <button onclick="setScatterFilter('all')" id="sbtn-all" class="scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap">
+                  🌐 全量标的 ({all_scatter_count})
+                </button>
+              </div>
+
+              <!-- Label Density Control (方案 1: 标签显示档位) -->
+              <div class="inline-flex items-center p-1 bg-gray-900/90 border border-gray-800 rounded-xl gap-1 text-xs">
+                <span class="text-gray-500 text-[11px] px-1.5 font-medium whitespace-nowrap">🏷️ 标名:</span>
+                <button onclick="setLabelMode('smart')" id="lbtn-smart" class="label-pill px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap" title="智能清晰展示核心标的与大球内嵌代码">
+                  清晰精选
+                </button>
+                <button onclick="setLabelMode('golden')" id="lbtn-golden" class="label-pill px-2.5 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap" title="显示所有低于大师成本折价标的名称">
+                  黄金区全部
+                </button>
+                <button onclick="setLabelMode('all')" id="lbtn-all" class="label-pill px-2.5 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap" title="显示全量标的公司名称（引线自动避让）">
+                  全量标名
+                </button>
+              </div>
             </div>
 
-            <!-- Axis Explanatory Subtitle -->
+            <!-- Right: Axis Explanatory Subtitle -->
             <div class="text-xs text-gray-400 flex items-center gap-2 flex-wrap">
               <span class="px-2 py-0.5 rounded bg-gray-800/80 border border-gray-700/60 font-mono text-[11px] text-gray-300">X轴</span>
               <span>相对建仓成本溢价 (负数越左越便宜)</span>
@@ -2757,6 +2774,7 @@ def generate_html(data: dict) -> str:
 
     let currentScatterFilter = 'core'; // 'core', 'golden', 'brk', 'duan_li', 'all'
     let currentScatterSearch = '';
+    let currentLabelMode = 'smart'; // 'smart', 'golden', 'all'
 
     // Bounds: X [-50, +50] -> [50, 910] (Width: 860, Center 0% at 480)
     // Bounds: Y [-5, +35] -> [310, 30] (Height: 280, 4% line at 247)
@@ -2806,11 +2824,9 @@ def generate_html(data: dict) -> str:
       // Sort points so larger bubbles are drawn first (smaller on top for easy clicking)
       const sortedPoints = [...filtered].sort((a, b) => (b.weight || 0) - (a.weight || 0));
 
-      // Determine which points get permanent visible labels:
-      // In core / brk / duan_li mode or when search is active, show more labels;
-      // In all mode, show labels only for Top 18 by weight or matched search items
-      const showAllLabels = filtered.length <= 25 || searchQ.length > 0;
-      const topLabelSet = new Set(sortedPoints.slice(0, 18).map(p => p.ticker));
+      // Determine candidate set for smart mode
+      const topLabelSet = new Set(sortedPoints.slice(0, 25).map(p => p.ticker));
+      const placedLabels = [];
 
       sortedPoints.forEach(pt => {{
         const cx = mapX(pt.x_cost_diff);
@@ -2818,6 +2834,7 @@ def generate_html(data: dict) -> str:
         const r = Math.max(5, Math.min(16, Math.sqrt(pt.weight || 1) * 3));
         const isCheap = pt.x_cost_diff < 0;
         const isMatched = searchQ && matchedTickers.has(pt.ticker);
+        const isBigBubble = r >= 9.5;
 
         // Wrap in link to company page!
         const link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
@@ -2834,6 +2851,7 @@ def generate_html(data: dict) -> str:
         circle.setAttribute('stroke', isMatched ? '#fbbf24' : (isCheap ? '#34d399' : '#60a5fa'));
         circle.setAttribute('stroke-width', isMatched ? '2.5' : '1.5');
         circle.setAttribute('class', 'transition-all duration-200');
+        link.appendChild(circle);
 
         // Highlight ring if matched search
         if (isMatched) {{
@@ -2849,25 +2867,99 @@ def generate_html(data: dict) -> str:
           link.appendChild(pulseRing);
         }}
 
-        // Text label
-        const shouldShowLabel = isMatched || showAllLabels || topLabelSet.has(pt.ticker);
+        // Big bubble inner ticker text (内嵌代码)
+        if (isBigBubble) {{
+          const innerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          innerText.setAttribute('x', cx);
+          innerText.setAttribute('y', cy);
+          innerText.setAttribute('text-anchor', 'middle');
+          innerText.setAttribute('dominant-baseline', 'central');
+          innerText.setAttribute('fill', '#ffffff');
+          innerText.setAttribute('font-size', r >= 13 ? '9' : '8');
+          innerText.setAttribute('font-family', 'ui-monospace, monospace');
+          innerText.setAttribute('font-weight', 'bold');
+          innerText.setAttribute('class', 'pointer-events-none select-none');
+          innerText.textContent = pt.ticker;
+          link.appendChild(innerText);
+        }}
+
+        // Determine if external label should be shown
+        let shouldShowLabel = false;
+        if (isMatched) {{
+          shouldShowLabel = true;
+        }} else if (currentLabelMode === 'all') {{
+          shouldShowLabel = true;
+        }} else if (currentLabelMode === 'golden') {{
+          shouldShowLabel = isCheap || topLabelSet.has(pt.ticker);
+        }} else {{
+          // 'smart' mode: show labels for top 25 or small set (<= 35)
+          shouldShowLabel = filtered.length <= 35 || topLabelSet.has(pt.ticker);
+        }}
+
+        // If big bubble already has inner text, only show external text if searched or hovered
+        if (isBigBubble && !isMatched && currentLabelMode !== 'all') {{
+          shouldShowLabel = false;
+        }}
+
+        // Position external label: flip to left if near right border (cx > 780)
+        const isNearRightBorder = cx > 780;
+        const baseLabelX = isNearRightBorder ? (cx - r - 5) : (cx + r + 5);
+        const textAnchor = isNearRightBorder ? 'end' : 'start';
+
+        let labelY = cy + 3.5;
+        let labelX = baseLabelX;
+        let leaderLine = null;
+
+        if (shouldShowLabel) {{
+          // Stagger against previously placed labels in proximity
+          for (let placed of placedLabels) {{
+            if (Math.abs(placed.x - labelX) < 45 && Math.abs(placed.y - labelY) < 11.5) {{
+              const shift = labelY >= placed.y ? 11.5 : -11.5;
+              labelY += shift;
+              if (Math.abs(labelY - (cy + 3.5)) >= 8) {{
+                leaderLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                leaderLine.setAttribute('x1', cx);
+                leaderLine.setAttribute('y1', cy);
+                leaderLine.setAttribute('x2', isNearRightBorder ? labelX + 2 : labelX - 2);
+                leaderLine.setAttribute('y2', labelY - 2);
+                leaderLine.setAttribute('stroke', '#64748b');
+                leaderLine.setAttribute('stroke-width', '0.75');
+                leaderLine.setAttribute('stroke-dasharray', '2,2');
+                leaderLine.setAttribute('opacity', '0.6');
+              }}
+            }}
+          }}
+          placedLabels.push({{ x: labelX, y: labelY }});
+        }}
+
+        if (leaderLine) {{
+          link.appendChild(leaderLine);
+        }}
+
+        // External text label
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', cx + r + 3);
-        text.setAttribute('y', cy + 3.5);
+        text.setAttribute('x', labelX);
+        text.setAttribute('y', labelY);
+        text.setAttribute('text-anchor', textAnchor);
         text.setAttribute('fill', isMatched ? '#fbbf24' : '#e2e8f0');
         text.setAttribute('font-size', isMatched ? '11' : '9.5');
         text.setAttribute('font-family', 'ui-monospace, monospace');
         text.setAttribute('font-weight', 'bold');
         text.setAttribute('class', shouldShowLabel ? 'transition-colors select-none' : 'hidden transition-colors select-none');
         text.textContent = pt.ticker;
+        link.appendChild(text);
 
         // Hover events
         link.addEventListener('mouseenter', (e) => {{
-          circle.setAttribute('r', r + 3.5);
+          circle.setAttribute('r', isMatched ? r + 5 : r + 3.5);
           circle.setAttribute('stroke', '#ffffff');
           circle.setAttribute('stroke-width', '2.5');
           text.classList.remove('hidden');
           text.setAttribute('fill', '#ffffff');
+          if (leaderLine) {{
+            leaderLine.setAttribute('stroke', '#34d399');
+            leaderLine.setAttribute('opacity', '1');
+          }}
 
           const costStr = pt.weighted_cost ? `$${{Number(pt.weighted_cost).toFixed(2)}}` : '—';
           const curStr = pt.current_price ? `$${{Number(pt.current_price).toFixed(2)}}` : '—';
@@ -2930,11 +3022,13 @@ def generate_html(data: dict) -> str:
             text.classList.add('hidden');
           }}
           text.setAttribute('fill', isMatched ? '#fbbf24' : '#e2e8f0');
+          if (leaderLine) {{
+            leaderLine.setAttribute('stroke', '#64748b');
+            leaderLine.setAttribute('opacity', '0.6');
+          }}
           tooltip.classList.add('hidden');
         }});
 
-        link.appendChild(circle);
-        link.appendChild(text);
         scatterGroup.appendChild(link);
       }});
     }}
@@ -2948,6 +3042,18 @@ def generate_html(data: dict) -> str:
       const activeBtn = document.getElementById('sbtn-' + filterKey);
       if (activeBtn) {{
         activeBtn.className = 'scatter-pill px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap';
+      }}
+      renderScatter();
+    }}
+
+    function setLabelMode(mode) {{
+      currentLabelMode = mode;
+      document.querySelectorAll('.label-pill').forEach(btn => {{
+        btn.className = 'label-pill px-2.5 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-700 transition-all whitespace-nowrap';
+      }});
+      const activeBtn = document.getElementById('lbtn-' + mode);
+      if (activeBtn) {{
+        activeBtn.className = 'label-pill px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap';
       }}
       renderScatter();
     }}
