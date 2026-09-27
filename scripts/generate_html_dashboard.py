@@ -2145,18 +2145,6 @@ def generate_html(data: dict) -> str:
             </div>
           </div>
 
-          <!-- Active Quadrant Philosophy & Interpretation Banner -->
-          <div id="quadrantBanner" class="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/25 text-xs text-gray-300 mb-3 flex items-start gap-2.5">
-            <span id="quadrantBannerIcon" class="text-lg leading-none shrink-0 mt-0.5">🟢</span>
-            <div class="flex-1">
-              <span id="quadrantBannerTitle" class="font-bold text-emerald-400 mr-2 text-xs">黄金击球区（Sweet Spot）</span>
-              <span id="quadrantBannerDesc" class="text-gray-300 text-[11.5px] leading-relaxed">现价低于超级投资人加权建仓成本（具备买底安全边际），且具备 ≥4.0% 自由现金流收益率（内生造血充沛）。最符合“以四毛钱买一美元资产”的黄金配置窗口。</span>
-            </div>
-            <div id="quadrantItemCount" class="text-[11px] text-emerald-400 font-mono font-bold whitespace-nowrap px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-              {golden_quad_count} 家标的
-            </div>
-          </div>
-
           <!-- Drawer Company Cards Grid (Scrollable Container) -->
           <div id="quadrantCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 max-h-[480px] overflow-y-auto pr-1">
             <!-- Dynamically injected via JS -->
@@ -3167,7 +3155,6 @@ def generate_html(data: dict) -> str:
     // Quadrant Discovery Drawer Implementation
     function renderQuadrantDrawer() {{
       const container = document.getElementById('quadrantCardsContainer');
-      const countEl = document.getElementById('quadrantItemCount');
       if (!container) return;
 
       let list = scatterData;
@@ -3197,10 +3184,6 @@ def generate_html(data: dict) -> str:
           const peB = (b.pe && b.pe !== '—') ? Number(b.pe) : 999;
           return peA - peB;
         }});
-      }}
-
-      if (countEl) {{
-        countEl.textContent = `${{list.length}} 家标的`;
       }}
 
       if (list.length === 0) {{
@@ -3287,21 +3270,6 @@ def generate_html(data: dict) -> str:
       const activeBtn = document.getElementById('qtab-' + quadrantKey);
       if (activeBtn) {{
         activeBtn.className = 'qtab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm transition-all whitespace-nowrap flex items-center gap-1.5';
-      }}
-
-      // Update Banner
-      const banner = document.getElementById('quadrantBanner');
-      const icon = document.getElementById('quadrantBannerIcon');
-      const title = document.getElementById('quadrantBannerTitle');
-      const desc = document.getElementById('quadrantBannerDesc');
-      if (banner && meta) {{
-        banner.className = `p-3 rounded-xl ${{meta.bgBorder}} text-xs text-gray-300 mb-3 flex items-start gap-2.5`;
-        if (icon) icon.textContent = meta.icon;
-        if (title) {{
-          title.className = `font-bold ${{meta.titleColor}} mr-2 text-xs`;
-          title.textContent = meta.name;
-        }}
-        if (desc) desc.textContent = meta.desc;
       }}
 
       renderQuadrantDrawer();
