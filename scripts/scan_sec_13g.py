@@ -49,6 +49,7 @@ TRACKED_GURUS_CIK = {
     "HH":  {"name": "Duan Yongping - H&H International", "short": "段永平", "cik": "0001759760", "tier": 1},
     "SE":  {"name": "Mason Hawkins - Southeastern", "short": "霍金斯", "cik": "0000720875", "tier": 2},
     "MKL": {"name": "Thomas Gayner - Markel Group", "short": "盖纳", "cik": "0001096343", "tier": 2},
+    "GLRE": {"name": "David Einhorn - Greenlight Capital", "short": "艾因霍恩", "cik": "0001079114", "tier": 3},
 }
 
 DEFAULT_CANDIDATE_TICKERS = [

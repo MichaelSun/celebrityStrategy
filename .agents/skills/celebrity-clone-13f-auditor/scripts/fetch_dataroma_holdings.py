@@ -74,6 +74,7 @@ TRACKED_GURUS = {
     "psc": {"name": "Bill Ackman - Pershing Square (阿克曼)", "short": "阿克曼", "tier": 3, "cik": "", "cik_active": False},
     "AM": {"name": "David Tepper - Appaloosa (泰珀)", "short": "泰珀", "tier": 3, "cik": "", "cik_active": False},
     "oc": {"name": "Howard Marks - Oaktree Capital (马克斯)", "short": "马克斯", "tier": 3, "cik": "", "cik_active": False},
+    "GLRE": {"name": "David Einhorn - Greenlight Capital (艾因霍恩)", "short": "艾因霍恩", "tier": 3, "cik": "0001079114", "cik_active": True},
 }
 
 SIGNAL_LABEL = {
@@ -165,10 +166,18 @@ def _import_phase2_modules():
     except Exception:
         pass
     try:
-        from generate_html_dashboard import generate_html, load_dashboard_data, generate_all_company_pages
+        from generate_html_dashboard import (
+            generate_html, load_dashboard_data, generate_all_company_pages,
+            generate_all_scoring_pages, generate_all_cost_pages,
+            build_company_catalog, build_cost_matrix
+        )
         mod["generate_html"] = generate_html
         mod["load_dashboard_data"] = load_dashboard_data
         mod["generate_all_company_pages"] = generate_all_company_pages
+        mod["generate_all_scoring_pages"] = generate_all_scoring_pages
+        mod["generate_all_cost_pages"] = generate_all_cost_pages
+        mod["build_company_catalog"] = build_company_catalog
+        mod["build_cost_matrix"] = build_cost_matrix
     except Exception:
         pass
     return mod
@@ -1095,13 +1104,22 @@ def main():
             dash_path = os.path.join(out_dir, "dashboard.html")
             with open(dash_path, "w", encoding="utf-8") as f:
                 f.write(html_code)
-            docs_path = os.path.join(PROJECT_ROOT, "docs", "index.html")
+            docs_path = os.path.join(project_root, "docs", "index.html")
             os.makedirs(os.path.dirname(docs_path), exist_ok=True)
             with open(docs_path, "w", encoding="utf-8") as f:
                 f.write(html_code)
             if "generate_all_company_pages" in p2:
                 p2["generate_all_company_pages"](db_path, os.path.join(out_dir, "companies"))
-                p2["generate_all_company_pages"](db_path, os.path.join(PROJECT_ROOT, "docs", "companies"))
+                p2["generate_all_company_pages"](db_path, os.path.join(project_root, "docs", "companies"))
+            if "build_company_catalog" in p2 and "build_cost_matrix" in p2:
+                catalog = p2["build_company_catalog"](dash_data["holdings"], dash_data["valuations"])
+                cost_matrix = p2["build_cost_matrix"](dash_data["holdings"], dash_data["valuations"])
+                if "generate_all_scoring_pages" in p2:
+                    p2["generate_all_scoring_pages"](dash_data["convictions"], catalog, os.path.join(out_dir, "companies"))
+                    p2["generate_all_scoring_pages"](dash_data["convictions"], catalog, os.path.join(project_root, "docs", "companies"))
+                if "generate_all_cost_pages" in p2:
+                    p2["generate_all_cost_pages"](cost_matrix, catalog, os.path.join(out_dir, "companies"))
+                    p2["generate_all_cost_pages"](cost_matrix, catalog, os.path.join(project_root, "docs", "companies"))
             print(f"  ✅ Interactive HTML Dashboard saved: {dash_path}")
             print(f"  ✅ Web deployment asset saved: {docs_path}")
         except Exception as e:
