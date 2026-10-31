@@ -147,6 +147,29 @@ def _fetch_13g_details(cik: str, acc: str) -> tuple:
         pass
     return "", 0.0, ""
 
+def _fetch_form4_details(cik: str, acc: str, doc: str) -> tuple:
+    """Fetch Form 4 XML and extract (issuer_name, action, ticker)"""
+    cik_int = str(int(cik))
+    acc_nodash = acc.replace("-", "")
+    doc_filename = doc.split("/")[-1] if doc else "ownership.xml"
+    url = f"https://www.sec.gov/Archives/edgar/data/{cik_int}/{acc_nodash}/{doc_filename}"
+    try:
+        r = SESSION.get(url, headers=SEC_HEADERS, timeout=8)
+        if r.status_code == 200:
+            sym_match = re.search(r"<issuerTradingSymbol>([^<]+)</issuerTradingSymbol>", r.text)
+            name_match = re.search(r"<issuerName>([^<]+)</issuerName>", r.text)
+            sym = sym_match.group(1).strip() if sym_match else ""
+            name = name_match.group(1).strip() if name_match else ""
+            codes = re.findall(r"<transactionCode>([^<]+)</transactionCode>", r.text)
+            is_buy = any(c == "P" for c in codes)
+            is_sell = any(c == "S" for c in codes)
+            action = "增持" if is_buy and not is_sell else "减持" if is_sell and not is_buy else "调仓"
+            ticker = sym if sym else _infer_ticker(name)
+            return name, action, ticker
+    except Exception:
+        pass
+    return "", "", ""
+
 # ── Track 1: Guru CIK Direct Query ───────────────────────────────────────────
 def scan_guru_13g_filings(ciks_dict: Dict, days_back: int = 180) -> List[Dict]:
     """
@@ -172,28 +195,45 @@ def scan_guru_13g_filings(ciks_dict: Dict, days_back: int = 180) -> List[Dict]:
             docs = recent.get("primaryDocument", [])
 
             for i, f in enumerate(forms):
+                f_date = dates[i] if i < len(dates) else ""
+                if not f_date or f_date < cutoff_date:
+                    continue
+                acc = accs[i] if i < len(accs) else ""
+                acc_nodash = acc.replace("-", "")
+                cik_int = str(int(cik))
+                filing_url = f"https://www.sec.gov/Archives/edgar/data/{cik_int}/{acc_nodash}/{acc}-index.html"
+
                 if "13G" in f or "13D" in f:
-                    f_date = dates[i] if i < len(dates) else ""
-                    if f_date and f_date >= cutoff_date:
-                        acc = accs[i] if i < len(accs) else ""
-                        acc_nodash = acc.replace("-", "")
-                        cik_int = str(int(cik))
-
-                        # Fetch issuer and percent from XML details
-                        issuer, pct, ticker = _fetch_13g_details(cik, acc)
-                        subject_name = issuer if issuer else "（见申报明细）"
-
-                        filing_url = f"https://www.sec.gov/Archives/edgar/data/{cik_int}/{acc_nodash}/{acc}-index.html"
+                    issuer, pct, ticker = _fetch_13g_details(cik, acc)
+                    subject_name = issuer if issuer else "（见申报明细）"
+                    signals.append({
+                        "filing_date": f_date,
+                        "form_type": f,
+                        "filer_name": info["name"],
+                        "filer_cik": cik,
+                        "subject_name": subject_name,
+                        "subject_ticker": ticker,
+                        "accession_num": acc,
+                        "url": filing_url,
+                        "ownership_pct": pct,
+                        "is_tracked_guru": 1,
+                        "tier": info["tier"],
+                        "guru_code": code,
+                    })
+                elif f == "4":
+                    doc = docs[i] if i < len(docs) else ""
+                    issuer, action, ticker = _fetch_form4_details(cik, acc, doc)
+                    if ticker and ticker not in ("BRK.A", "BRK.B", "BRK-A", "BRK-B", "MKL") and action:
                         signals.append({
                             "filing_date": f_date,
-                            "form_type": f,
+                            "form_type": f"FORM 4 ({action})",
                             "filer_name": info["name"],
                             "filer_cik": cik,
-                            "subject_name": subject_name,
+                            "subject_name": issuer,
                             "subject_ticker": ticker,
                             "accession_num": acc,
                             "url": filing_url,
-                            "ownership_pct": pct,
+                            "ownership_pct": 0.0,
                             "is_tracked_guru": 1,
                             "tier": info["tier"],
                             "guru_code": code,

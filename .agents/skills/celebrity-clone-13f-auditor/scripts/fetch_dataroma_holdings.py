@@ -577,15 +577,16 @@ def record_to_sqlite(db_path, quarter, all_data):
         for code, data in all_data.items():
             if not data or "holdings" not in data:
                 continue
+            guru_q = data.get("period") if data.get("period") and data["period"] != "Unknown" else quarter
             for h in data["holdings"]:
                 pct_chg = h.get("pct_change", 0.0)
                 shares_held = h.get("shares", 0)
                 weight = h.get("pct", 0.0)
                 price = h.get("price", 0.0)
                 cur.execute("""
-                INSERT OR IGNORE INTO portfolio_history (quarter, guru_code, ticker, company_name, activity, shares_change, portfolio_pct_change, shares_held, portfolio_weight, reported_price)
+                INSERT OR REPLACE INTO portfolio_history (quarter, guru_code, ticker, company_name, activity, shares_change, portfolio_pct_change, shares_held, portfolio_weight, reported_price)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (quarter, code, h["ticker"], h["company"], h["activity"], str(h.get("shares_change", 0)), pct_chg, shares_held, weight, price))
+                """, (guru_q, code, h["ticker"], h["company"], h["activity"], str(h.get("shares_change", 0)), pct_chg, shares_held, weight, price))
         conn.commit()
         conn.close()
     except Exception:
@@ -1001,14 +1002,26 @@ def main():
             validation[code] = validate_holdings(data["holdings"], sec_data.get(code), yf_prices)
 
     # 5. Record to SQLite Time-Series DB
-    # Dynamically infer quarter: use actual data period or fall back to date-based inference
-    quarter = None
+    # Dynamically infer quarter: pick the latest period among active gurus or fall back to date-based inference
+    quarters_found = []
     for code in active_codes:
         d = all_data.get(code)
         if d and d.get("period") and d["period"] != "Unknown":
-            quarter = d["period"]
-            break
-    if not quarter:
+            quarters_found.append(d["period"])
+
+    def _q_sort(q_str):
+        parts = str(q_str).strip().split()
+        y, q = 0, 0
+        for p in parts:
+            if p.isdigit() and len(p) == 4:
+                y = int(p)
+            elif p.upper().startswith("Q") and p[1:].isdigit():
+                q = int(p[1:])
+        return (y, q)
+
+    if quarters_found:
+        quarter = sorted(quarters_found, key=_q_sort, reverse=True)[0]
+    else:
         # Fallback: infer from current date minus ~45-day 13F reporting lag
         report_ref = datetime.datetime.now() - datetime.timedelta(days=45)
         q_num = (report_ref.month - 1) // 3 + 1
@@ -1112,7 +1125,7 @@ def main():
                 p2["generate_all_company_pages"](db_path, os.path.join(out_dir, "companies"))
                 p2["generate_all_company_pages"](db_path, os.path.join(project_root, "docs", "companies"))
             if "build_company_catalog" in p2 and "build_cost_matrix" in p2:
-                catalog = p2["build_company_catalog"](dash_data["holdings"], dash_data["valuations"])
+                catalog = p2["build_company_catalog"](db_path)
                 cost_matrix = p2["build_cost_matrix"](dash_data["holdings"], dash_data["valuations"])
                 if "generate_all_scoring_pages" in p2:
                     p2["generate_all_scoring_pages"](dash_data["convictions"], catalog, os.path.join(out_dir, "companies"))

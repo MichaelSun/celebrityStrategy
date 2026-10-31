@@ -193,14 +193,32 @@ def run_cost_backfill(db_path: str = DB_PATH, max_workers: int = 8):
     ensure_schema(conn)
     cur = conn.cursor()
 
-    # Query all active holdings in the most recent quarter (Q2 2026)
-    cur.execute("""
-    SELECT DISTINCT guru_code, ticker 
-    FROM portfolio_history 
-    WHERE quarter = 'Q2 2026' AND shares_held > 0
-    """)
-    targets = cur.fetchall()
-    print(f"🎯 Found {len(targets)} active guru positions in Q2 2026 to backfill.")
+    # Query all active holdings in each guru's latest quarter
+    def _q_sort(q_str):
+        parts = str(q_str).strip().split()
+        y, q = 0, 0
+        for p in parts:
+            if p.isdigit() and len(p) == 4:
+                y = int(p)
+            elif p.upper().startswith("Q") and p[1:].isdigit():
+                q = int(p[1:])
+        return (y, q)
+
+    guru_quarters = cur.execute("SELECT DISTINCT guru_code, quarter FROM portfolio_history").fetchall()
+    latest_by_guru = {}
+    for gcode, q in guru_quarters:
+        if gcode not in latest_by_guru or _q_sort(q) > _q_sort(latest_by_guru[gcode]):
+            latest_by_guru[gcode] = q
+
+    targets = []
+    for gcode, lq in latest_by_guru.items():
+        rows = cur.execute("""
+            SELECT DISTINCT guru_code, ticker 
+            FROM portfolio_history 
+            WHERE guru_code = ? AND quarter = ? AND shares_held > 0
+        """, (gcode, lq)).fetchall()
+        targets.extend(rows)
+    print(f"🎯 Found {len(targets)} active guru positions across latest quarters to backfill.")
 
     results = []
     completed = 0

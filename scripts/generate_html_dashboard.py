@@ -1475,18 +1475,44 @@ def load_dashboard_data(db_path: str):
     # 1. Guru Meta
     gurus = {r["code"]: dict(r) for r in cur.execute("SELECT * FROM guru_meta").fetchall()}
 
-    # 2. Latest Quarter Holdings (Q2 2026 or most recent)
-    recent_q = cur.execute("SELECT DISTINCT quarter FROM portfolio_history ORDER BY id DESC LIMIT 1").fetchone()
-    latest_quarter = recent_q[0] if recent_q else "Q2 2026"
+    # 2. Query each guru's latest reported quarter in portfolio_history
+    # Handles filing transition periods (e.g., early Q3 filers alongside Q2 filers)
+    def _q_sort(q_str):
+        parts = str(q_str).strip().split()
+        y, q = 0, 0
+        for p in parts:
+            if p.isdigit() and len(p) == 4:
+                y = int(p)
+            elif p.upper().startswith("Q") and p[1:].isdigit():
+                q = int(p[1:])
+        return (y, q)
 
-    holdings_rows = cur.execute("""
-    SELECT ph.*, gm.name as guru_name, gm.tier
-    FROM portfolio_history ph
-    LEFT JOIN guru_meta gm ON ph.guru_code = gm.code
-    WHERE ph.quarter = ?
-    ORDER BY ph.portfolio_weight DESC
-    """, (latest_quarter,)).fetchall()
+    guru_quarters = cur.execute("SELECT DISTINCT guru_code, quarter FROM portfolio_history").fetchall()
+    latest_by_guru = {}
+    all_quarters = set()
+    for row in guru_quarters:
+        gcode = row[0]
+        q = row[1]
+        all_quarters.add(q)
+        if gcode not in latest_by_guru or _q_sort(q) > _q_sort(latest_by_guru[gcode]):
+            latest_by_guru[gcode] = q
+
+    sorted_quarters = sorted(list(all_quarters), key=_q_sort, reverse=True)
+    latest_quarter = sorted_quarters[0] if sorted_quarters else "Q2 2026"
+
+    holdings_rows = []
+    for gcode, lq in latest_by_guru.items():
+        rows = cur.execute("""
+            SELECT ph.*, gm.name as guru_name, gm.tier
+            FROM portfolio_history ph
+            LEFT JOIN guru_meta gm ON ph.guru_code = gm.code
+            WHERE ph.guru_code = ? AND ph.quarter = ?
+            ORDER BY ph.portfolio_weight DESC
+        """, (gcode, lq)).fetchall()
+        holdings_rows.extend(rows)
+
     holdings = [dict(r) for r in holdings_rows]
+    holdings.sort(key=lambda x: x.get("portfolio_weight") or 0.0, reverse=True)
 
     # 2b. Query guru_cost_basis to get true historical acquisition cost and lot trail
     cost_basis_map = {}
